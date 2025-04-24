@@ -1,0 +1,534 @@
+"use client"
+
+import { useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { GripVertical, Plus, X, HelpCircle } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+
+export function CrosstabBuilder() {
+  const [rowVariables, setRowVariables] = useState<string[]>([])
+  const [columnVariables, setColumnVariables] = useState<string[]>([])
+  const [bannerVariables, setBannerVariables] = useState<string[]>([])
+  const [selectedTab, setSelectedTab] = useState("basic")
+
+  // Mock data for variables
+  const variables = [
+    { id: 1, name: "age", label: "Age of respondent", type: "numeric" },
+    { id: 2, name: "gender", label: "Gender", type: "categorical" },
+    { id: 3, name: "income", label: "Annual income", type: "numeric" },
+    { id: 4, name: "education", label: "Education level", type: "ordinal" },
+    { id: 5, name: "satisfaction", label: "Customer satisfaction", type: "ordinal" },
+    { id: 6, name: "region", label: "Geographic region", type: "categorical" },
+    { id: 7, name: "purchase_frequency", label: "Purchase frequency", type: "ordinal" },
+    { id: 8, name: "age_group", label: "Age group", type: "categorical" },
+    { id: 9, name: "product_rating", label: "Product rating", type: "numeric" },
+    { id: 10, name: "loyalty_years", label: "Years as customer", type: "numeric" },
+  ]
+
+  const addRowVariable = (variable: string) => {
+    if (!rowVariables.includes(variable)) {
+      setRowVariables([...rowVariables, variable])
+    }
+  }
+
+  const addColumnVariable = (variable: string) => {
+    if (!columnVariables.includes(variable)) {
+      setColumnVariables([...columnVariables, variable])
+    }
+  }
+
+  const addBannerVariable = (variable: string) => {
+    if (!bannerVariables.includes(variable)) {
+      setBannerVariables([...bannerVariables, variable])
+    }
+  }
+
+  const removeRowVariable = (variable: string) => {
+    setRowVariables(rowVariables.filter((v) => v !== variable))
+  }
+
+  const removeColumnVariable = (variable: string) => {
+    setColumnVariables(columnVariables.filter((v) => v !== variable))
+  }
+
+  const removeBannerVariable = (variable: string) => {
+    setBannerVariables(bannerVariables.filter((v) => v !== variable))
+  }
+
+  const getVariableLabel = (name: string) => {
+    if (!name || !variables || !Array.isArray(variables)) return name
+    const variable = variables.find((v) => v && v.name === name)
+    return variable && variable.label ? variable.label : name
+  }
+
+  const canRunAnalysis = rowVariables.length > 0 && (columnVariables.length > 0 || bannerVariables.length > 0)
+
+  return (
+    <div className="space-y-4">
+      <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="basic">Basic Cross-tabulation</TabsTrigger>
+          <TabsTrigger value="banner">Banner Tables</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="basic" className="space-y-4 mt-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Row Variables</CardTitle>
+                <CardDescription>Select variables to display as rows</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {rowVariables.length === 0 ? (
+                  <div className="border border-dashed rounded-md p-4 text-center text-muted-foreground">
+                    No row variables selected
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {rowVariables.map((variable, index) => (
+                      <div
+                        key={variable}
+                        className="flex items-center justify-between p-2 border rounded-md bg-muted/50"
+                      >
+                        <div className="flex items-center gap-2">
+                          <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                          <span>{getVariableLabel(variable)}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => removeRowVariable(variable)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full mt-4">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Row Variable
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-0" align="start">
+                    <ScrollArea className="h-[200px]">
+                      {variables.map((variable) => (
+                        <button
+                          key={variable.id}
+                          className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                          onClick={() => {
+                            addRowVariable(variable.name)
+                          }}
+                        >
+                          {variable.label}
+                        </button>
+                      ))}
+                    </ScrollArea>
+                  </PopoverContent>
+                </Popover>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Column Variables</CardTitle>
+                <CardDescription>Select variables to display as columns</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {columnVariables.length === 0 ? (
+                  <div className="border border-dashed rounded-md p-4 text-center text-muted-foreground">
+                    No column variables selected
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {columnVariables.map((variable, index) => (
+                      <div
+                        key={variable}
+                        className="flex items-center justify-between p-2 border rounded-md bg-muted/50"
+                      >
+                        <div className="flex items-center gap-2">
+                          <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                          <span>{getVariableLabel(variable)}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => removeColumnVariable(variable)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full mt-4">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Column Variable
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-0" align="start">
+                    <ScrollArea className="h-[200px]">
+                      {variables.map((variable) => (
+                        <button
+                          key={variable.id}
+                          className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                          onClick={() => {
+                            addColumnVariable(variable.name)
+                          }}
+                        >
+                          {variable.label}
+                        </button>
+                      ))}
+                    </ScrollArea>
+                  </PopoverContent>
+                </Popover>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Analysis Options</CardTitle>
+              <CardDescription>Configure additional analysis settings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="statistics">
+                  <AccordionTrigger>Statistics</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="chi-square" />
+                          <Label htmlFor="chi-square">Chi-square</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="phi-cramer" />
+                          <Label htmlFor="phi-cramer">Phi & Cramer's V</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="contingency" />
+                          <Label htmlFor="contingency">Contingency Coefficient</Label>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="row-pct" defaultChecked />
+                          <Label htmlFor="row-pct">Row Percentages</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="col-pct" defaultChecked />
+                          <Label htmlFor="col-pct">Column Percentages</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="total-pct" />
+                          <Label htmlFor="total-pct">Total Percentages</Label>
+                        </div>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="display">
+                  <AccordionTrigger>Display Options</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="decimal-places">Decimal Places</Label>
+                          <Select defaultValue="1">
+                            <SelectTrigger id="decimal-places">
+                              <SelectValue placeholder="Select decimal places" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">0</SelectItem>
+                              <SelectItem value="1">1</SelectItem>
+                              <SelectItem value="2">2</SelectItem>
+                              <SelectItem value="3">3</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="missing-values">Missing Values</Label>
+                          <Select defaultValue="exclude">
+                            <SelectTrigger id="missing-values">
+                              <SelectValue placeholder="Handle missing values" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="exclude">Exclude</SelectItem>
+                              <SelectItem value="include">Include</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="hide-empty" />
+                        <Label htmlFor="hide-empty">Hide Empty Rows/Columns</Label>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="significance">
+                  <AccordionTrigger>Significance Testing</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="enable-sig" />
+                        <Label htmlFor="enable-sig">Enable Significance Testing</Label>
+                      </div>
+                      <div>
+                        <Label htmlFor="sig-level">Significance Level</Label>
+                        <Select defaultValue="0.05" disabled>
+                          <SelectTrigger id="sig-level">
+                            <SelectValue placeholder="Select significance level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0.1">0.1 (90%)</SelectItem>
+                            <SelectItem value="0.05">0.05 (95%)</SelectItem>
+                            <SelectItem value="0.01">0.01 (99%)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline">Reset</Button>
+              <Button
+                disabled={!canRunAnalysis}
+                onClick={() => {
+                  /* Run analysis */
+                }}
+              >
+                Run Analysis
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="banner" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-lg">Banner Variables</CardTitle>
+                  <CardDescription>Select variables to display as banners</CardDescription>
+                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <HelpCircle className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      Banner tables display multiple analyses in a single table. Each banner variable creates a section
+                      of columns in the table.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {bannerVariables.length === 0 ? (
+                <div className="border border-dashed rounded-md p-4 text-center text-muted-foreground">
+                  No banner variables selected
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {bannerVariables.map((variable, index) => (
+                    <div key={variable} className="flex items-center justify-between p-2 border rounded-md bg-muted/50">
+                      <div className="flex items-center gap-2">
+                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                        <span>{getVariableLabel(variable)}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => removeBannerVariable(variable)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full mt-4">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Banner Variable
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                  <ScrollArea className="h-[200px]">
+                    {variables.map((variable) => (
+                      <button
+                        key={variable.id}
+                        className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                        onClick={() => {
+                          addBannerVariable(variable.name)
+                        }}
+                      >
+                        {variable.label}
+                      </button>
+                    ))}
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Row Variables</CardTitle>
+              <CardDescription>Select variables to display as rows</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {rowVariables.length === 0 ? (
+                <div className="border border-dashed rounded-md p-4 text-center text-muted-foreground">
+                  No row variables selected
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {rowVariables.map((variable, index) => (
+                    <div key={variable} className="flex items-center justify-between p-2 border rounded-md bg-muted/50">
+                      <div className="flex items-center gap-2">
+                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                        <span>{getVariableLabel(variable)}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => removeRowVariable(variable)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full mt-4">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Row Variable
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                  <ScrollArea className="h-[200px]">
+                    {variables.map((variable) => (
+                      <button
+                        key={variable.id}
+                        className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                        onClick={() => {
+                          addRowVariable(variable.name)
+                        }}
+                      >
+                        {variable.label}
+                      </button>
+                    ))}
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Banner Table Options</CardTitle>
+              <CardDescription>Configure banner table settings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="statistics">
+                  <AccordionTrigger>Statistics</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="banner-counts" defaultChecked />
+                          <Label htmlFor="banner-counts">Show Counts</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="banner-col-pct" defaultChecked />
+                          <Label htmlFor="banner-col-pct">Column Percentages</Label>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="banner-sig" />
+                          <Label htmlFor="banner-sig">Significance Testing</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="banner-mean" />
+                          <Label htmlFor="banner-mean">Mean (for numeric)</Label>
+                        </div>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="layout">
+                  <AccordionTrigger>Layout Options</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="banner-layout">Banner Layout</Label>
+                        <Select defaultValue="standard">
+                          <SelectTrigger id="banner-layout">
+                            <SelectValue placeholder="Select layout" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="standard">Standard</SelectItem>
+                            <SelectItem value="compact">Compact</SelectItem>
+                            <SelectItem value="expanded">Expanded</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="banner-hide-empty" />
+                        <Label htmlFor="banner-hide-empty">Hide Empty Categories</Label>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline">Reset</Button>
+              <Button
+                disabled={rowVariables.length === 0 || bannerVariables.length === 0}
+                onClick={() => {
+                  /* Run analysis */
+                }}
+              >
+                Run Banner Analysis
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
