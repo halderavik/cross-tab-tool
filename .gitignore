@@ -1,5 +1,11 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# General
+.DS_Store
+Thumbs.db
+*.log
+logs/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -28,40 +34,52 @@ htmlcov/
 .tox/
 .nox/
 .hypothesis/
+.mypy_cache/
+.ruff_cache/
 
-# Virtual Environment
+# Virtual Environments
 venv/
 ENV/
 env/
+.venv/
+.env/
 .env
-.venv
-env.bak/
+.env.*
 venv.bak/
+env.bak/
 
 # Node.js
 node_modules/
+frontend/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-.next/
-out/
-build/
-.DS_Store
-*.pem
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
-# IDE
+# Next.js
+.next/
+frontend/.next/
+out/
+frontend/out/
+
+# Build
+build/
+frontend/build/
+
+# Local environment files
+.env.local
+.env.*.local
+frontend/.env
+frontend/.env.*
+
+# IDE/editor
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
 
-# Project specific
+# Project-specific
 backend/uploads/
 *.sav
 *.csv
@@ -70,48 +88,19 @@ backend/uploads/
 *.db
 *.sqlite3
 
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# System Files
-.DS_Store
-Thumbs.db
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
-
-# testing
+# Testing
 /coverage
 
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
-.env*.local
-
-# vercel
+# Vercel
 .vercel
 
-# typescript
+# TypeScript
 *.tsbuildinfo
 next-env.d.ts
+frontend/next-env.d.ts
+
+# Misc
+*.pem
+.pnp
+.pnp.js
+.yarn/install-state.gz

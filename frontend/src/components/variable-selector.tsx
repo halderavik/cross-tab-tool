@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Search, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { VariableInfoDialog } from "@/components/variable-info-dialog"
-import { useData } from "@/lib/data-context"
+import { useData } from "@/contexts/data-context"
 
 export function VariableSelector() {
   const { variables } = useData()
@@ -26,15 +26,25 @@ export function VariableSelector() {
     values: string[]
   } | null>(null)
 
+  // Debug logs
+  console.log("All variables from context:", variables)
+
   const variableTypes = ["numeric", "categorical", "ordinal"]
 
+  // Ensure type filter is case-insensitive and type values are lowercase
   const filteredVariables = variables.filter((variable) => {
+    const name = variable.name?.toLowerCase() || ""
+    const label = variable.label?.toLowerCase() || ""
+    const type = variable.type?.toLowerCase() || ""
     const matchesSearch =
-      variable.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      variable.label.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType = selectedType.length === 0 || selectedType.includes(variable.type)
+      name.includes(searchQuery.toLowerCase()) ||
+      label.includes(searchQuery.toLowerCase())
+    const matchesType =
+      selectedType.length === 0 || selectedType.map(t => t.toLowerCase()).includes(type)
     return matchesSearch && matchesType
   })
+
+  console.log("Filtered variables:", filteredVariables)
 
   const toggleVariableSelection = (variableName: string) => {
     if (selectedVariables.includes(variableName)) {

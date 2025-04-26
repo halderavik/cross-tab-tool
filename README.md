@@ -14,7 +14,7 @@ A modern web application for analyzing and processing survey data from SPSS (.sa
 ## Tech Stack
 
 ### Frontend
-- Next.js 13
+- Next.js 13+
 - TypeScript
 - Tailwind CSS
 - React Query
@@ -39,46 +39,53 @@ A modern web application for analyzing and processing survey data from SPSS (.sa
 ### Backend Setup
 
 1. Create and activate a virtual environment:
-```bash
-cd backend
-python -m venv venv
-.\venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/Mac
-```
+   ```bash
+   cd backend
+   python -m venv venv
+   # Windows:
+   .\venv\Scripts\activate
+   # Linux/Mac:
+   source venv/bin/activate
+   ```
 
 2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 3. Set up environment variables:
-Create a `.env` file in the backend directory with:
-```
-DATABASE_URL=postgresql://user:password@localhost:5432/cross_tab_db
-```
+   Create a `.env` file in the backend directory with:
+   ```
+   DATABASE_URL=postgresql://user:password@localhost:5432/cross_tab_db
+   ```
 
 4. Initialize the database:
-```bash
-python init_db.py
-```
+   ```bash
+   python init_db.py
+   ```
 
 5. Start the backend server:
-```bash
-python main.py
-```
+   ```bash
+   # Recommended (hot reload):
+   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   # Or (production):
+   uvicorn main:app --host 0.0.0.0 --port 8000
+   ```
 
 ### Frontend Setup
 
 1. Install dependencies:
-```bash
-cd frontend
-npm install
-```
+   ```bash
+   cd frontend
+   npm install
+   ```
 
 2. Start the development server:
-```bash
-npm run dev
-```
+   ```bash
+   npm run dev
+   ```
+
+3. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## API Endpoints
 

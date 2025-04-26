@@ -1,4 +1,6 @@
-import React, { createContext, useContext, ReactNode, useState } from 'react'
+"use client"
+
+import { createContext, useContext, ReactNode, useState } from 'react'
 
 interface SampleData {
   columns: string[]
@@ -17,25 +19,53 @@ interface VariableSummary {
   [key: string]: VariableStats
 }
 
+export interface Variable {
+  id: number | string
+  name: string
+  label: string
+  type: string
+  [key: string]: any
+}
+
 interface DataContextType {
-  sampleData: SampleData | null
-  setSampleData: (data: SampleData | null) => void
-  variableSummary: VariableSummary | null
-  setVariableSummary: (summary: VariableSummary | null) => void
+  data: any
+  setData: (data: any) => void
+  isLoading: boolean
+  setIsLoading: (loading: boolean) => void
+  error: string | null
+  setError: (error: string | null) => void
+  dataFile: File | null
+  setDataFile: (file: File | null) => void
+  dataLoaded: boolean
+  setDataLoaded: (loaded: boolean) => void
+  variables: Variable[]
+  setVariables: (variables: Variable[]) => void
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [sampleData, setSampleData] = useState<SampleData | null>(null)
-  const [variableSummary, setVariableSummary] = useState<VariableSummary | null>(null)
+  const [data, setData] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
+  const [dataFile, setDataFile] = useState<File | null>(null)
+  const [dataLoaded, setDataLoaded] = useState<boolean>(false)
+  const [variables, setVariables] = useState<Variable[]>([])
 
   return (
     <DataContext.Provider value={{ 
-      sampleData, 
-      setSampleData,
-      variableSummary,
-      setVariableSummary
+      data, 
+      setData,
+      isLoading,
+      setIsLoading,
+      error,
+      setError,
+      dataFile,
+      setDataFile,
+      dataLoaded,
+      setDataLoaded,
+      variables,
+      setVariables
     }}>
       {children}
     </DataContext.Provider>

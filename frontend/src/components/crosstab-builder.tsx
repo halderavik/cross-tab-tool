@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useData } from "@/contexts/data-context"
 
 export function CrosstabBuilder() {
   const [rowVariables, setRowVariables] = useState<string[]>([])
@@ -19,19 +20,8 @@ export function CrosstabBuilder() {
   const [bannerVariables, setBannerVariables] = useState<string[]>([])
   const [selectedTab, setSelectedTab] = useState("basic")
 
-  // Mock data for variables
-  const variables = [
-    { id: 1, name: "age", label: "Age of respondent", type: "numeric" },
-    { id: 2, name: "gender", label: "Gender", type: "categorical" },
-    { id: 3, name: "income", label: "Annual income", type: "numeric" },
-    { id: 4, name: "education", label: "Education level", type: "ordinal" },
-    { id: 5, name: "satisfaction", label: "Customer satisfaction", type: "ordinal" },
-    { id: 6, name: "region", label: "Geographic region", type: "categorical" },
-    { id: 7, name: "purchase_frequency", label: "Purchase frequency", type: "ordinal" },
-    { id: 8, name: "age_group", label: "Age group", type: "categorical" },
-    { id: 9, name: "product_rating", label: "Product rating", type: "numeric" },
-    { id: 10, name: "loyalty_years", label: "Years as customer", type: "numeric" },
-  ]
+  // Use variables from context
+  const { variables } = useData()
 
   const addRowVariable = (variable: string) => {
     if (!rowVariables.includes(variable)) {

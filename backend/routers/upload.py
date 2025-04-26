@@ -118,6 +118,8 @@ async def upload_file(
             else:  # csv
                 df = pd.read_csv(file_path)
                 logger.info(f"Successfully read CSV file")
+            logger.info(f"DataFrame columns: {df.columns.tolist()}")
+            logger.info(f"First row: {df.head(1).to_dict(orient='records')}")
             
             variables = list(df.columns)
             logger.info(f"Found {len(variables)} variables")

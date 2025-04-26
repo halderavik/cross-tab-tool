@@ -6,7 +6,8 @@ import { Upload } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
-import { useData } from "@/lib/data-context"
+import { useData } from "@/contexts/data-context"
+import { useRouter } from "next/navigation"
 
 // Temporarily hardcoded for testing
 const BACKEND_URL = "http://localhost:8000"
@@ -16,6 +17,7 @@ export function FileUploader() {
   const [progress, setProgress] = React.useState(0)
   const { toast } = useToast()
   const { setDataFile, setDataLoaded, setVariables } = useData()
+  const router = useRouter()
 
   const onDrop = React.useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
@@ -73,7 +75,18 @@ export function FileUploader() {
       if (data && typeof data === 'object' && 'variables' in data) {
         setDataFile(data)
         setDataLoaded(true)
-        setVariables(Array.isArray(data.variables) ? data.variables : [])
+        console.log('Backend variables:', data.variables)
+        const mappedVariables = Array.isArray(data.variables)
+          ? data.variables.map((name: string, idx: number) => ({
+              id: idx,
+              name,
+              label: name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
+              type: "numeric", // Default type; update if you have type info
+            }))
+          : [];
+        console.log('Mapped variables:', mappedVariables)
+        setVariables(mappedVariables)
+        router.push("/analyze")
       }
 
       toast({
@@ -91,7 +104,7 @@ export function FileUploader() {
       setIsUploading(false)
       setProgress(100)
     }
-  }, [toast, setDataFile, setDataLoaded, setVariables])
+  }, [toast, setDataFile, setDataLoaded, setVariables, router])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -106,14 +119,14 @@ export function FileUploader() {
 
   return (
     <div
-      {...getRootProps()}
+      {...(getRootProps({}) as any)}
       className={cn(
         "flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors",
         isDragActive ? "border-primary/50 bg-primary/5" : "border-muted-foreground/25",
         "hover:border-primary/50 hover:bg-primary/5 cursor-pointer"
       )}
     >
-      <input {...getInputProps()} />
+      <input {...(getInputProps({}) as any)} />
       <Upload className="h-10 w-10 text-muted-foreground mb-4" />
       <p className="mb-2 text-sm font-medium">Drag & drop your file here or click to browse</p>
       <p className="text-xs text-muted-foreground">Supports SPSS (.sav) and CSV (.csv) files up to 50MB</p>

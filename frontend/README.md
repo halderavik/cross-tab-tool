@@ -4,7 +4,7 @@ An AI-powered platform for analyzing SPSS files and performing advanced cross-ta
 
 ## Features
 
-- SPSS File Support: Upload and analyze SPSS (.sav) files with ease
+- SPSS File Support: Upload and analyze SPSS (.sav) and CSV files
   - Extract variable metadata (names, labels, types)
   - Handle value labels and missing values
   - Generate sample data previews
@@ -16,7 +16,7 @@ An AI-powered platform for analyzing SPSS files and performing advanced cross-ta
 ## Tech Stack
 
 ### Frontend
-- Next.js 14
+- Next.js 13+
 - TypeScript
 - Tailwind CSS
 - Radix UI Components
@@ -27,56 +27,79 @@ An AI-powered platform for analyzing SPSS files and performing advanced cross-ta
 - PostgreSQL
 - SQLAlchemy ORM
 - PyReadStat for SPSS file processing
+- pandas
 - Pytest for testing
+
+## Prerequisites
+
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL
+- npm or yarn
 
 ## Getting Started
 
-### Frontend
-
-1. Clone the repository:
-```bash
-git clone https://github.com/halderavik/cross_tab_tool.git
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Run the development server:
-```bash
-npm run dev
-```
-
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Backend
+### Backend Setup
 
 1. Navigate to the backend directory:
-```bash
-cd backend
-```
-
+   ```bash
+   cd backend
+   ```
 2. Create and activate a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-```
-
+   ```bash
+   python -m venv venv
+   # On Windows:
+   .\venv\Scripts\activate
+   # On Linux/Mac:
+   source venv/bin/activate
+   ```
 3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Set up environment variables:
+   Create a `.env` file in the backend directory with:
+   ```
+   DATABASE_URL=postgresql://user:password@localhost:5432/cross_tab_db
+   ```
+5. Initialize the database:
+   ```bash
+   python init_db.py
+   ```
+6. Start the backend server:
+   ```bash
+   # Recommended (hot reload):
+   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   # Or (production):
+   uvicorn main:app --host 0.0.0.0 --port 8000
+   ```
 
-4. Run the tests:
-```bash
-python -m pytest
-```
+### Frontend Setup
 
-5. Start the backend server:
-```bash
-uvicorn main:app --reload
-```
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Development
+
+### Code Style
+- Follow PEP 8 for Python code
+- Use TypeScript for frontend development
+- Maintain consistent naming conventions
+
+### Testing
+- Backend: pytest
+- Frontend: Jest
 
 ## License
 
