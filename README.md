@@ -1,83 +1,124 @@
-# SPSS Cross-Tab Tool
+# Cross-Tab Tool
 
-An AI-powered platform for analyzing SPSS files and performing advanced cross-tabulations.
+A modern web application for analyzing and processing survey data from SPSS (.sav) and CSV files.
 
 ## Features
 
-- SPSS File Support: Upload and analyze SPSS (.sav) files with ease
-  - Extract variable metadata (names, labels, types)
-  - Handle value labels and missing values
-  - Generate sample data previews
-  - Comprehensive error handling
-- Cross-Tabulation: Create complex cross-tabs and banner tables
-- Visualizations: Generate charts and graphs from your analysis
-- AI Assistant: Get help with your analysis from our AI agent
+- **File Upload**: Support for both SPSS (.sav) and CSV file formats
+- **Data Processing**: Automatic handling of special values (NaN, infinity)
+- **Variable Analysis**: View and analyze survey variables
+- **Cross-Tabulation**: Create and analyze cross-tabulations
+- **Modern UI**: Built with Next.js and TypeScript
+- **RESTful API**: FastAPI backend with proper error handling
 
 ## Tech Stack
 
 ### Frontend
-- Next.js 14
+- Next.js 13
 - TypeScript
 - Tailwind CSS
-- Radix UI Components
-- Next Themes
+- React Query
+- Axios
 
 ### Backend
-- Python FastAPI
+- FastAPI
+- SQLAlchemy
 - PostgreSQL
-- SQLAlchemy ORM
-- PyReadStat for SPSS file processing
-- Pytest for testing
+- pyreadstat (for SPSS file processing)
+- pandas
 
-## Getting Started
+## Prerequisites
 
-### Frontend
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL
+- npm or yarn
 
-1. Clone the repository:
+## Installation
+
+### Backend Setup
+
+1. Create and activate a virtual environment:
 ```bash
-git clone https://github.com/halderavik/cross_tab_tool.git
+cd backend
+python -m venv venv
+.\venv\Scripts\activate  # Windows
+source venv/bin/activate  # Linux/Mac
 ```
 
 2. Install dependencies:
 ```bash
-npm install
-```
-
-3. Run the development server:
-```bash
-npm run dev
-```
-
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Backend
-
-1. Navigate to the backend directory:
-```bash
-cd backend
-```
-
-2. Create and activate a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
 pip install -r requirements.txt
 ```
 
-4. Run the tests:
+3. Set up environment variables:
+Create a `.env` file in the backend directory with:
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/cross_tab_db
+```
+
+4. Initialize the database:
 ```bash
-python -m pytest
+python init_db.py
 ```
 
 5. Start the backend server:
 ```bash
-uvicorn main:app --reload
+python main.py
 ```
+
+### Frontend Setup
+
+1. Install dependencies:
+```bash
+cd frontend
+npm install
+```
+
+2. Start the development server:
+```bash
+npm run dev
+```
+
+## API Endpoints
+
+### File Upload
+- `POST /api/upload`
+  - Accepts: SPSS (.sav) or CSV files
+  - Returns: File metadata and sample data
+
+### Test Connection
+- `GET /api/test-connection`
+  - Returns: API status and timestamp
+
+## Development
+
+### Code Style
+- Follow PEP 8 for Python code
+- Use TypeScript for frontend development
+- Maintain consistent naming conventions
+
+### Testing
+- Backend: pytest
+- Frontend: Jest
+
+## Error Handling
+
+The application includes comprehensive error handling for:
+- File upload errors
+- Database operations
+- API connectivity
+- CORS issues
+- Special value processing (NaN, infinity)
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
 ## License
 
-MIT
+MIT License 
