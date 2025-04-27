@@ -10,6 +10,8 @@ A modern web application for analyzing and processing survey data from SPSS (.sa
 - **Cross-Tabulation**: Create and analyze cross-tabulations
 - **Modern UI**: Built with Next.js and TypeScript
 - **RESTful API**: FastAPI backend with proper error handling
+- **Data Context**: React context for managing application state
+- **Type Safety**: Full TypeScript support with proper type definitions
 
 ## Tech Stack
 
@@ -19,6 +21,7 @@ A modern web application for analyzing and processing survey data from SPSS (.sa
 - Tailwind CSS
 - React Query
 - Axios
+- React Context API
 
 ### Backend
 - FastAPI
@@ -104,10 +107,13 @@ A modern web application for analyzing and processing survey data from SPSS (.sa
 - Follow PEP 8 for Python code
 - Use TypeScript for frontend development
 - Maintain consistent naming conventions
+- Use React Context for state management
+- Implement proper type definitions for all components
 
 ### Testing
 - Backend: pytest
 - Frontend: Jest
+- Type checking with TypeScript
 
 ## Error Handling
 

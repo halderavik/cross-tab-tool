@@ -4,6 +4,8 @@ from fastapi.middleware.gzip import GZipMiddleware
 import logging
 from routers import upload, csv
 from datetime import datetime
+from routers.analyze import router as analyze_router
+import sys
 
 # Configure logging
 logging.basicConfig(
@@ -47,6 +49,7 @@ async def test_connection():
 # Include routers
 app.include_router(upload.router, prefix="/api", tags=["upload"])
 app.include_router(csv.router, prefix="/api", tags=["csv"])
+app.include_router(analyze_router)
 
 @app.get("/")
 async def root():
@@ -57,6 +60,9 @@ async def root():
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy"}
+
+print(f"[FastAPI Startup] Python executable: {sys.executable}")
+print(f"[FastAPI Startup] Python path: {sys.path}")
 
 if __name__ == "__main__":
     import uvicorn

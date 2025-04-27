@@ -186,4 +186,33 @@ class SPSSProcessor:
             return summary
         except Exception as e:
             logger.error(f"Error getting variable summary: {str(e)}")
+            return {}
+    
+    def get_crosstab(self, index: str, columns: str, normalize: bool = False, margins: bool = False) -> Dict[str, Any]:
+        """
+        Generate a crosstab (contingency table) for two variables.
+
+        Args:
+            index (str): The variable to use as the row index.
+            columns (str): The variable to use as the column index.
+            normalize (bool): Whether to normalize the crosstab (show proportions instead of counts).
+            margins (bool): Whether to include row/column totals.
+
+        Returns:
+            Dict[str, Any]: Crosstab as a nested dictionary.
+        """
+        try:
+            if self.data is None:
+                raise ValueError("No data loaded")
+            if index not in self.data.columns or columns not in self.data.columns:
+                raise ValueError(f"Variables '{index}' or '{columns}' not found in data")
+            ctab = pd.crosstab(
+                self.data[index],
+                self.data[columns],
+                normalize='all' if normalize else False,
+                margins=margins
+            )
+            return ctab.to_dict()
+        except Exception as e:
+            logger.error(f"Error generating crosstab: {str(e)}")
             return {} 
