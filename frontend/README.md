@@ -10,8 +10,11 @@ An AI-powered platform for analyzing SPSS files and performing advanced cross-ta
   - Generate sample data previews
   - Comprehensive error handling
 - Cross-Tabulation: Create complex cross-tabs and banner tables
-- Visualizations: Generate charts and graphs from your analysis
-- AI Assistant: Get help with your analysis from our AI agent
+- Visualizations: Generate charts and graphs from your analysis, with support for bar, line, and pie charts in the AI agent chat popup
+- AI Assistant: Get help with your analysis from our AI agent, including visualization popups and dynamic statistics
+- State Management: React Context for application-wide state
+- Type Safety: Full TypeScript implementation
+- Custom Variable Builder: Create new variables by combining values from any columns, with dropdowns showing all possible values for each condition.
 
 ## Tech Stack
 
@@ -21,6 +24,8 @@ An AI-powered platform for analyzing SPSS files and performing advanced cross-ta
 - Tailwind CSS
 - Radix UI Components
 - Next Themes
+- React Context API
+- Recharts (for chart visualizations)
 
 ### Backend
 - Python FastAPI
@@ -96,10 +101,13 @@ An AI-powered platform for analyzing SPSS files and performing advanced cross-ta
 - Follow PEP 8 for Python code
 - Use TypeScript for frontend development
 - Maintain consistent naming conventions
+- Implement proper type definitions
+- Use React Context for state management
 
 ### Testing
 - Backend: pytest
 - Frontend: Jest
+- Type checking with TypeScript
 
 ## License
 

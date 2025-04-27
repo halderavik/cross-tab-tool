@@ -15,6 +15,18 @@
   - [x] Create DataContext with TypeScript interfaces
   - [x] Implement sampleData handling
   - [x] Add proper type definitions
+- [x] Save indexed (parquet) data file in UploadedFile and update AI agent to use it (2025-04-27)
+  - [x] Alembic migration for indexed_path
+  - [x] Update upload logic to save DataFrame as parquet and store path
+  - [x] Update AI agent endpoint to load from indexed_path if available
+  - [ ] (Discovered During Work): Add tests for upload and agent endpoints with indexed data
+- [x] AI agent chat interface
+- [x] Visualization pop-ups
+- [x] Data context management
+- [x] Type definitions for analysis responses
+- [x] AI agent chat visualization popup (bar, line, pie charts) and improved error handling (2024-06-10)
+- [x] Dynamic descriptive statistics rendering in frontend (2024-06-10)
+- [x] Custom Variable Builder: Per-condition value dropdown for selecting any value present in the data for any column (2024-06-11)
 
 ## In Progress Tasks
 - [ ] File Upload & Processing System
@@ -93,12 +105,20 @@
 
 ### Phase 4: AI Assistant Integration 
 **1. Context Management**
-- [ ] Analysis state tracking
-- [ ] Context packaging for LLM
+- [x] Analysis state tracking
+- [x] Context packaging for LLM
 
 **2. LLM Interaction**
-- [ ] API endpoint for assistant queries
-- [ ] Response handling
+- [x] API endpoint for assistant queries
+- [x] Response handling
+- [x] DeepSeek R1 integration
+- [x] Unit tests for AI agent
+
+**3. Frontend Integration**
+- [x] AI agent chat interface
+- [x] Visualization pop-ups
+- [x] Data context management
+- [x] Type definitions for analysis responses
 
 ### Phase 5: Performance & Polish 
 **1. Optimization**
@@ -125,5 +145,14 @@
 - [ ] Add TypeScript type definitions for all API responses
 - [ ] Implement proper error boundaries in React components
 - [ ] Add loading states for data fetching operations
+- [ ] Add proper error handling for DeepSeek API calls
+- [ ] Implement rate limiting for AI agent requests
+- [ ] Add caching for frequently requested analyses
+- [ ] Add validation for LLM response parsing
+- [ ] Add loading states for visualizations
+- [ ] Implement error boundaries for visualization components
+- [ ] Add tooltips for chart elements
+- [ ] Implement responsive design for visualizations
+- [ ] Ensure all frontend chart dependencies (e.g., recharts) are documented and installed
 
 This detailed task breakdown ensures the backend will fully support all the cross-tabulation functionality visible in the frontend while maintaining statistical rigor and good performance. The phased approach allows for incremental development with clear integration points at each stage.

@@ -12,6 +12,9 @@ A modern web application for analyzing and processing survey data from SPSS (.sa
 - **RESTful API**: FastAPI backend with proper error handling
 - **Data Context**: React context for managing application state
 - **Type Safety**: Full TypeScript support with proper type definitions
+- **AI Assistant**: Get help with your analysis from our AI agent, including visualizations and dynamic statistics
+- **Visualizations**: Generate charts and graphs from your analysis, with support for bar, line, and pie charts in the AI agent chat popup
+- **Custom Variable Builder**: Create new variables by combining values from any columns, with dropdowns showing all possible values for each condition.
 
 ## Tech Stack
 
@@ -135,3 +138,6 @@ The application includes comprehensive error handling for:
 ## License
 
 MIT License 
+
+### Additional Frontend Dependencies
+- [recharts](https://recharts.org/) (for chart visualizations) 
