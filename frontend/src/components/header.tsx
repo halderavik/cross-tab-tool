@@ -3,10 +3,11 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
-import { BarChart3, FileSpreadsheet, Home, Menu, MessageSquareText, X, Variable } from "lucide-react"
+import { BarChart3, FileSpreadsheet, Home, Menu, MessageSquareText, X, Variable, HelpCircle } from "lucide-react"
 import { useState } from "react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { HelpDialog } from "@/components/help-dialog"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -49,6 +50,7 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <ModeToggle />
+          <HelpDialog />
           <Button variant="default" size="sm" className="hidden md:flex">
             Get Started
           </Button>

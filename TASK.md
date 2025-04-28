@@ -30,6 +30,16 @@
 - [x] **Custom Variable Builder moved to Variables section only; removed from cross-tabulation section for UI clarity and consistency (2024-06-11)**
 - [x] Add backend endpoints to retrieve full data for CSV and SPSS files (`/api/csv-full/{filename}` and `/api/spss-full/{filename}`) (2024-06-12)
 - [x] Add 'Load Full Data' button to Data Viewer in frontend to fetch and display all rows for CSV and SPSS files (2024-06-12)
+- [x] Install and configure all required frontend dependencies
+  - [x] Core dependencies (Next.js, React, TypeScript)
+  - [x] UI libraries (Radix UI, Material UI, Emotion)
+  - [x] Styling (Tailwind CSS, Class Variance Authority, clsx)
+  - [x] Data visualization (Recharts)
+  - [x] Icons (Lucide React)
+  - [x] State management (React Context API)
+  - [x] API client (Axios)
+  - [x] Theme management (Next Themes)
+  - [x] UI utilities (Floating UI)
 
 ## In Progress Tasks
 - [ ] File Upload & Processing System
@@ -79,19 +89,19 @@
 
 ### Phase 2: Cross-Tabulation Engine 
 **1. Basic Cross-Tabulation**
-- [ ] API endpoint design
-  - [ ] POST `/api/analyze/crosstab` with params
-- [ ] Core calculation logic
-  - [ ] Frequency counting
-  - [ ] Percentage calculations
-  - [ ] Margin totals
-  - [ ] Chi-square test implementation
-- [ ] Response format matching frontend expectations
+- [x] API endpoint design
+  - [x] POST `/api/analyze/crosstab` with params
+- [x] Core calculation logic
+  - [x] Frequency counting
+  - [x] Percentage calculations
+  - [x] Margin totals
+  - [x] Chi-square test implementation
+- [x] Response format matching frontend expectations
 
 **2. Advanced Cross-Tab Features**
-- [ ] Weighting support
-- [ ] Subgroup analysis
-- [ ] Complex table types
+- [x] Weighting support
+- [x] Subgroup analysis
+- [x] Complex table types
 
 **3. Statistical Testing**
 - [ ] Implement additional tests
@@ -158,5 +168,9 @@
 - [ ] Implement responsive design for visualizations
 - [ ] Ensure all frontend chart dependencies (e.g., recharts) are documented and installed
 - [x] Update documentation and UI to reflect that custom variables are only created/managed from the Variables section (2024-06-11)
+- [ ] Add comprehensive documentation for all frontend dependencies and their usage
+- [ ] Create a dependency update strategy to keep all packages up to date
+- [ ] Add version compatibility checks between frontend dependencies
+- [ ] Document any known issues or workarounds with specific dependency versions
 
 This detailed task breakdown ensures the backend will fully support all the cross-tabulation functionality visible in the frontend while maintaining statistical rigor and good performance. The phased approach allows for incremental development with clear integration points at each stage.

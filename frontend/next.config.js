@@ -6,11 +6,15 @@ const nextConfig = {
     domains: ['localhost'],
   },
   // Ensure proper path resolution
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': require('path').resolve(__dirname, 'src'),
     };
+    // Disable caching in development
+    if (process.env.NODE_ENV === 'development') {
+      config.cache = false;
+    }
     return config;
   },
   // Add API proxy configuration

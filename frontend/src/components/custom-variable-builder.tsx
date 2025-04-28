@@ -182,7 +182,7 @@ export function CustomVariableBuilder({ onVariableCreated }: CustomVariableBuild
               {index > 0 && (
                 <Select
                   value={condition.operator}
-                  onValueChange={(value) => updateCondition(condition.id, 'operator', value)}
+                  onValueChange={(value: 'AND' | 'OR') => updateCondition(condition.id, 'operator', value)}
                 >
                   <SelectTrigger className="w-[80px]">
                     <SelectValue />
@@ -196,7 +196,7 @@ export function CustomVariableBuilder({ onVariableCreated }: CustomVariableBuild
 
               <Select
                 value={condition.column}
-                onValueChange={(value) => updateCondition(condition.id, 'column', value)}
+                onValueChange={(value: string) => updateCondition(condition.id, 'column', value)}
               >
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Select column" />
@@ -212,7 +212,7 @@ export function CustomVariableBuilder({ onVariableCreated }: CustomVariableBuild
 
               <Select
                 value={condition.comparison}
-                onValueChange={(value) => updateCondition(condition.id, 'comparison', value)}
+                onValueChange={(value: 'equals' | 'contains' | 'greater_than' | 'less_than') => updateCondition(condition.id, 'comparison', value)}
               >
                 <SelectTrigger className="w-[120px]">
                   <SelectValue />
@@ -228,7 +228,7 @@ export function CustomVariableBuilder({ onVariableCreated }: CustomVariableBuild
               {condition.column && getColumnValues(condition.column).length > 0 ? (
                 <Select
                   value={condition.value}
-                  onValueChange={(value) => updateCondition(condition.id, 'value', value)}
+                  onValueChange={(value: string) => updateCondition(condition.id, 'value', value)}
                 >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Select value" />

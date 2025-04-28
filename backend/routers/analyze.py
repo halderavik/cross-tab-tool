@@ -23,6 +23,8 @@ class CrosstabRequest(BaseModel):
     decimal_places: int = 1
     missing: str = "exclude"  # or "include"
     hide_empty: bool = False
+    weight_var: Optional[str] = None  # NEW: column name for weights
+    subgroup: Optional[Dict[str, Any]] = None  # NEW: {column: value or [values]}
 
 @router.post("/analyze-crosstab")
 def analyze_crosstab(req: CrosstabRequest):
@@ -30,6 +32,8 @@ def analyze_crosstab(req: CrosstabRequest):
         logger.info(f"Received crosstab request for file: {req.file_path}")
         logger.info(f"Row variables: {req.row_vars}")
         logger.info(f"Column variables: {req.col_vars}")
+        logger.info(f"Weight variable: {req.weight_var}")
+        logger.info(f"Subgroup: {req.subgroup}")
         
         # Validate file exists
         if not os.path.exists(req.file_path):
@@ -46,28 +50,41 @@ def analyze_crosstab(req: CrosstabRequest):
             logger.error(f"Error loading data file: {str(e)}")
             raise HTTPException(status_code=400, detail=f"Error loading data file: {str(e)}")
             
+        # Subgroup filtering
+        if req.subgroup:
+            for col, val in req.subgroup.items():
+                if col not in df.columns:
+                    raise HTTPException(status_code=400, detail=f"Subgroup column not found: {col}")
+                if isinstance(val, list):
+                    df = df[df[col].isin(val)]
+                else:
+                    df = df[df[col] == val]
+            logger.info(f"After subgroup filtering, shape: {df.shape}")
+        
         # Validate variables exist in data
-        missing_vars = [v for v in req.row_vars + req.col_vars if v not in df.columns]
+        all_vars = req.row_vars + req.col_vars
+        if req.weight_var:
+            all_vars.append(req.weight_var)
+        missing_vars = [v for v in all_vars if v not in df.columns]
         if missing_vars:
             raise HTTPException(status_code=400, detail=f"Variables not found in data: {missing_vars}")
             
         # Use only selected variables for analysis
-        selected_vars = list(set(req.row_vars + req.col_vars))
+        selected_vars = list(set(req.row_vars + req.col_vars + ([req.weight_var] if req.weight_var else [])))
         df = df[selected_vars]
         logger.info(f"Subset data shape for selected variables: {df.shape}")
 
-        # Do NOT drop any rows for missing values
-        # if req.missing == "exclude":
-        #     df = df.dropna(subset=req.row_vars + req.col_vars)
-        #     logger.info(f"After dropping missing values, shape: {df.shape}")
-            
         # Create crosstab (fully dynamic, robust to missing values)
         try:
-            ct = pd.crosstab(
+            crosstab_kwargs = dict(
                 index=[df[v] for v in req.row_vars],
                 columns=[df[v] for v in req.col_vars],
-                dropna=False  # Always include all combinations, even with NaN
+                dropna=False
             )
+            if req.weight_var:
+                crosstab_kwargs['values'] = df[req.weight_var]
+                crosstab_kwargs['aggfunc'] = 'sum'
+            ct = pd.crosstab(**crosstab_kwargs)
             logger.info(f"Crosstab created. Shape: {ct.shape}")
             # Drop all-zero rows and columns
             before_shape = ct.shape
@@ -80,12 +97,12 @@ def analyze_crosstab(req: CrosstabRequest):
         except Exception as e:
             logger.error(f"Error creating crosstab: {str(e)}")
             raise HTTPException(status_code=400, detail=f"Error creating crosstab: {str(e)}")
-            
+        
         # Hide empty rows/cols if requested
         if req.hide_empty:
             ct = ct.loc[(ct != 0).any(axis=1), (ct != 0).any(axis=0)]
             logger.info(f"After hiding empty rows/cols, shape: {ct.shape}")
-            
+        
         # Calculate percentages
         pct_tables = {}
         try:
@@ -102,7 +119,7 @@ def analyze_crosstab(req: CrosstabRequest):
         except Exception as e:
             logger.error(f"Error calculating percentages: {str(e)}")
             raise HTTPException(status_code=400, detail=f"Error calculating percentages: {str(e)}")
-            
+        
         # Calculate statistics
         stats = {}
         try:
@@ -124,7 +141,7 @@ def analyze_crosstab(req: CrosstabRequest):
         except Exception as e:
             logger.error(f"Error calculating statistics: {str(e)}")
             raise HTTPException(status_code=400, detail=f"Error calculating statistics: {str(e)}")
-            
+        
         # Format output
         try:
             def convert_index_keys(d):
@@ -146,7 +163,7 @@ def analyze_crosstab(req: CrosstabRequest):
         except Exception as e:
             logger.error(f"Error formatting output: {str(e)}")
             raise HTTPException(status_code=400, detail=f"Error formatting output: {str(e)}")
-            
+        
     except HTTPException:
         raise
     except Exception as e:

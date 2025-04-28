@@ -30,7 +30,7 @@ export default function Home() {
               <CardContent>
                 <FileUploader />
                 <div className="mt-4 text-center">
-                  <Button asChild size="lg">
+                  <Button asChild className="h-10 rounded-md px-8">
                     <Link href="/analyze">Start Analysis</Link>
                   </Button>
                 </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -49,9 +49,24 @@ export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
   const [enableSig, setEnableSig] = useState(false)
   const [sigLevel, setSigLevel] = useState(0.05)
   const [customVariables, setCustomVariables] = useState<CustomVariable[]>([])
+  const [weightVar, setWeightVar] = useState<string | null>(null)
+  const [subgroupVar, setSubgroupVar] = useState<string | null>(null)
+  const [subgroupValues, setSubgroupValues] = useState<string[]>([])
+  const [availableSubgroupValues, setAvailableSubgroupValues] = useState<string[]>([])
 
   // Use variables from context
-  const { variables } = useData()
+  const { variables, sampleData } = useData()
+
+  // Update available subgroup values when subgroupVar changes
+  useEffect(() => {
+    if (subgroupVar && sampleData) {
+      const uniqueVals = Array.from(new Set(sampleData.data.map((row: any) => String(row[subgroupVar])))).sort();
+      setAvailableSubgroupValues(uniqueVals)
+    } else {
+      setAvailableSubgroupValues([])
+    }
+    setSubgroupValues([])
+  }, [subgroupVar, sampleData])
 
   const addRowVariable = (variable: string) => {
     if (!rowVariables.includes(variable)) {
@@ -102,7 +117,7 @@ export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
       if (!dataFile?.filePath) {
         throw new Error("No data file selected. Please upload a file first.")
       }
-      
+      const subgroup = subgroupVar && subgroupValues.length > 0 ? { [subgroupVar]: subgroupValues.length === 1 ? subgroupValues[0] : subgroupValues } : undefined;
       const payload = {
         file_path: dataFile.filePath,
         row_vars: rowVariables,
@@ -113,7 +128,9 @@ export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
         decimal_places: decimalPlaces,
         missing,
         hide_empty: hideEmpty,
-        custom_variables: customVariables
+        custom_variables: customVariables,
+        weight_var: weightVar || undefined,
+        subgroup: subgroup
       }
       const res = await axios.post("/api/analyze-crosstab", payload)
       setData({ ...res.data, row_vars: rowVariables, col_vars: columnVariables })
@@ -258,6 +275,68 @@ export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
 
           <Card>
             <CardHeader>
+              <CardTitle className="text-lg">Advanced Options</CardTitle>
+              <CardDescription>Weighting and Subgroup Analysis</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Weight variable selection */}
+                <div>
+                  <Label htmlFor="weight-var">Weight Variable</Label>
+                  <Select value={weightVar ?? "__none__"} onValueChange={(val: string) => setWeightVar(val === "__none__" ? null : val)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select weight variable (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {variables.filter(v => v.type === "numeric").map(v => (
+                        <SelectItem key={v.name} value={v.name}>{v.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Subgroup selection */}
+                <div>
+                  <Label htmlFor="subgroup-var">Subgroup Variable</Label>
+                  <Select value={subgroupVar ?? "__none__"} onValueChange={(val: string) => setSubgroupVar(val === "__none__" ? null : val)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select subgroup variable (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {variables.map(v => (
+                        <SelectItem key={v.name} value={v.name}>{v.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {subgroupVar && availableSubgroupValues.length > 0 && (
+                    <div className="mt-2">
+                      <Label>Select Subgroup Value(s)</Label>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {availableSubgroupValues.map(val => (
+                          <Button
+                            key={val}
+                            size="sm"
+                            variant={subgroupValues.includes(val) ? "default" : "outline"}
+                            onClick={() => {
+                              setSubgroupValues(subgroupValues.includes(val)
+                                ? subgroupValues.filter(v => v !== val)
+                                : [...subgroupValues, val])
+                            }}
+                          >
+                            {val}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle className="text-lg">Analysis Options</CardTitle>
               <CardDescription>Configure additional analysis settings</CardDescription>
             </CardHeader>
@@ -269,29 +348,29 @@ export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="chi-square" checked={chiSquare} onCheckedChange={checked => setChiSquare(checked === true)} />
+                          <Checkbox id="chi-square" checked={chiSquare} onCheckedChange={(checked: boolean) => setChiSquare(checked === true)} />
                           <Label htmlFor="chi-square">Chi-square</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="phi-cramer" checked={phiCramer} onCheckedChange={checked => setPhiCramer(checked === true)} />
+                          <Checkbox id="phi-cramer" checked={phiCramer} onCheckedChange={(checked: boolean) => setPhiCramer(checked === true)} />
                           <Label htmlFor="phi-cramer">Phi & Cramer's V</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="contingency" checked={contingency} onCheckedChange={checked => setContingency(checked === true)} />
+                          <Checkbox id="contingency" checked={contingency} onCheckedChange={(checked: boolean) => setContingency(checked === true)} />
                           <Label htmlFor="contingency">Contingency Coefficient</Label>
                         </div>
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="row-pct" checked={rowPct} onCheckedChange={checked => setRowPct(checked === true)} />
+                          <Checkbox id="row-pct" checked={rowPct} onCheckedChange={(checked: boolean) => setRowPct(checked === true)} />
                           <Label htmlFor="row-pct">Row Percentages</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="col-pct" checked={colPct} onCheckedChange={checked => setColPct(checked === true)} />
+                          <Checkbox id="col-pct" checked={colPct} onCheckedChange={(checked: boolean) => setColPct(checked === true)} />
                           <Label htmlFor="col-pct">Column Percentages</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="total-pct" checked={totalPct} onCheckedChange={checked => setTotalPct(checked === true)} />
+                          <Checkbox id="total-pct" checked={totalPct} onCheckedChange={(checked: boolean) => setTotalPct(checked === true)} />
                           <Label htmlFor="total-pct">Total Percentages</Label>
                         </div>
                       </div>
@@ -305,8 +384,8 @@ export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="decimal-places">Decimal Places</Label>
-                          <Select value={decimalPlaces.toString()} onValueChange={(value) => setDecimalPlaces(Number(value))}>
-                            <SelectTrigger id="decimal-places">
+                          <Select value={decimalPlaces.toString()} onValueChange={(value: string) => setDecimalPlaces(Number(value))}>
+                            <SelectTrigger>
                               <SelectValue placeholder="Select decimal places" />
                             </SelectTrigger>
                             <SelectContent>
@@ -319,8 +398,8 @@ export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
                         </div>
                         <div>
                           <Label htmlFor="missing-values">Missing Values</Label>
-                          <Select value={missing} onValueChange={(value) => setMissing(value)}>
-                            <SelectTrigger id="missing-values">
+                          <Select value={missing} onValueChange={(value: string) => setMissing(value)}>
+                            <SelectTrigger>
                               <SelectValue placeholder="Handle missing values" />
                             </SelectTrigger>
                             <SelectContent>
@@ -331,7 +410,7 @@ export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="hide-empty" checked={hideEmpty} onCheckedChange={checked => setHideEmpty(checked === true)} />
+                        <Checkbox id="hide-empty" checked={hideEmpty} onCheckedChange={(checked: boolean) => setHideEmpty(checked === true)} />
                         <Label htmlFor="hide-empty">Hide Empty Rows/Columns</Label>
                       </div>
                     </div>
@@ -342,13 +421,13 @@ export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
                   <AccordionContent>
                     <div className="space-y-4">
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="enable-sig" checked={enableSig} onCheckedChange={checked => setEnableSig(checked === true)} />
+                        <Checkbox id="enable-sig" checked={enableSig} onCheckedChange={(checked: boolean) => setEnableSig(checked === true)} />
                         <Label htmlFor="enable-sig">Enable Significance Testing</Label>
                       </div>
                       <div>
                         <Label htmlFor="sig-level">Significance Level</Label>
-                        <Select value={sigLevel.toString()} onValueChange={(value) => setSigLevel(Number(value))}>
-                          <SelectTrigger id="sig-level">
+                        <Select value={sigLevel.toString()} onValueChange={(value: string) => setSigLevel(Number(value))}>
+                          <SelectTrigger>
                             <SelectValue placeholder="Select significance level" />
                           </SelectTrigger>
                           <SelectContent>
@@ -509,6 +588,68 @@ export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
 
           <Card>
             <CardHeader>
+              <CardTitle className="text-lg">Advanced Options</CardTitle>
+              <CardDescription>Weighting and Subgroup Analysis</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Weight variable selection */}
+                <div>
+                  <Label htmlFor="banner-weight-var">Weight Variable</Label>
+                  <Select value={weightVar ?? "__none__"} onValueChange={(val: string) => setWeightVar(val === "__none__" ? null : val)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select weight variable (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {variables.filter(v => v.type === "numeric").map(v => (
+                        <SelectItem key={v.name} value={v.name}>{v.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Subgroup selection */}
+                <div>
+                  <Label htmlFor="banner-subgroup-var">Subgroup Variable</Label>
+                  <Select value={subgroupVar ?? "__none__"} onValueChange={(val: string) => setSubgroupVar(val === "__none__" ? null : val)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select subgroup variable (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {variables.map(v => (
+                        <SelectItem key={v.name} value={v.name}>{v.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {subgroupVar && availableSubgroupValues.length > 0 && (
+                    <div className="mt-2">
+                      <Label>Select Subgroup Value(s)</Label>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {availableSubgroupValues.map(val => (
+                          <Button
+                            key={val}
+                            size="sm"
+                            variant={subgroupValues.includes(val) ? "default" : "outline"}
+                            onClick={() => {
+                              setSubgroupValues(subgroupValues.includes(val)
+                                ? subgroupValues.filter(v => v !== val)
+                                : [...subgroupValues, val])
+                            }}
+                          >
+                            {val}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle className="text-lg">Banner Table Options</CardTitle>
               <CardDescription>Configure banner table settings</CardDescription>
             </CardHeader>
@@ -548,7 +689,7 @@ export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
                       <div>
                         <Label htmlFor="banner-layout">Banner Layout</Label>
                         <Select defaultValue="standard">
-                          <SelectTrigger id="banner-layout">
+                          <SelectTrigger>
                             <SelectValue placeholder="Select layout" />
                           </SelectTrigger>
                           <SelectContent>

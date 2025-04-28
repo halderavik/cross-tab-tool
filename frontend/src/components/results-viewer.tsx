@@ -7,16 +7,34 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { BarChart3, Download, FileSpreadsheet, PieChart, Share2, Table2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useData } from "@/contexts/data-context"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 export function ResultsViewer() {
   const [viewMode, setViewMode] = useState<"table" | "bar" | "pie">("table")
-  const { data } = useData();
+  const [tableTab, setTableTab] = useState("frequency")
+  const { data, isLoading, error } = useData();
   const hasResults = !!data && data.table;
 
   // Get row/column variable names from the analysis result if available
   const rowVars = data?.row_vars || [];
   const colVars = data?.col_vars || [];
 
+  // Helper to get the right table for the selected tab
+  const getTable = () => {
+    if (!data) return null;
+    if (tableTab === "frequency") return data.table;
+    if (tableTab === "row_pct") return data.percentages?.row_pct;
+    if (tableTab === "col_pct") return data.percentages?.col_pct;
+    if (tableTab === "total_pct") return data.percentages?.total_pct;
+    return null;
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted-foreground">Running analysis...</div>;
+  }
+  if (error) {
+    return <div className="p-8 text-center text-destructive">{error}</div>;
+  }
   if (!hasResults) {
     return (
       <Card>
@@ -38,6 +56,11 @@ export function ResultsViewer() {
     )
   }
 
+  // Table rendering logic
+  const table = getTable() || {};
+  const colKeys = Object.keys(table);
+  const rowKeys = colKeys.length > 0 ? Object.keys(table[colKeys[0]] || {}) : [];
+
   return (
     <div className="space-y-4">
       <Card>
@@ -54,7 +77,7 @@ export function ResultsViewer() {
             <div className="flex gap-2">
               <Select 
                 value={viewMode} 
-                onValueChange={(value) => setViewMode(value as "table" | "bar" | "pie")}
+                onValueChange={(value: string) => setViewMode(value as "table" | "bar" | "pie")}
               >
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="View mode" />
@@ -91,102 +114,90 @@ export function ResultsViewer() {
         </CardHeader>
         <CardContent>
           {viewMode === "table" && (
-            <ScrollArea className="h-[400px] border rounded-md">
-              <div className="p-4">
-                <table className="w-full border-collapse">
-                  <thead>
-                    {/* Dynamically render multi-level column headers */}
-                    {(() => {
-                      const table = data.table || {};
-                      const colKeys = Object.keys(table);
-                      if (colKeys.length === 0) return null;
-                      // Get all unique column multi-index levels
-                      const colLevels = colKeys.map(k => {
-                        if (typeof k === 'string' && k.startsWith('(') && k.endsWith(')')) {
-                          // Remove parentheses and split by comma, trim spaces, handle 'nan'
-                          return k.slice(1, -1).split(',').map(s => s.trim());
-                        }
-                        return [k];
-                      });
-                      const maxColDepth = Math.max(...colLevels.map(l => Array.isArray(l) ? l.length : 1));
-                      // Build header rows
-                      let headerRows: any[] = [];
-                      for (let level = 0; level < maxColDepth; level++) {
-                        let row: any[] = [];
-                        let lastVal = null, span = 0;
-                        for (let i = 0; i < colLevels.length; i++) {
-                          let val = Array.isArray(colLevels[i]) ? colLevels[i][level] : (level === 0 ? colLevels[i] : "");
-                          if (val === lastVal) {
-                            span++;
-                          } else {
-                            if (lastVal !== null) {
-                              row.push(<th className="border p-2 text-center" colSpan={span}>{lastVal}</th>);
-                            }
-                            lastVal = val;
-                            span = 1;
-                          }
-                        }
-                        if (lastVal !== null) {
-                          row.push(<th className="border p-2 text-center" colSpan={span}>{lastVal}</th>);
-                        }
-                        headerRows.push(<tr key={level} className="bg-muted/50">{level === 0 && rowVars.length ? <th className="border p-2 text-left" rowSpan={maxColDepth}>{rowVars.join(' / ')}</th> : null}{row}</tr>);
-                      }
-                      return headerRows;
-                    })()}
-                  </thead>
-                  <tbody>
-                    {/* Dynamically render all rows */}
-                    {(() => {
-                      const table = data.table || {};
-                      const rowKeys = Object.keys(table[colVars && colVars.length ? Object.keys(table)[0] : ""] || {});
-                      const colKeys = Object.keys(table);
-                      if (colKeys.length === 0) return null;
-                      // If table is 2D: table[col][row] = value
-                      // Build all row keys from the first column
-                      const allRowKeys: string[] = [];
-                      colKeys.forEach(col => {
-                        Object.keys(table[col] || {}).forEach(row => {
-                          if (!allRowKeys.includes(row)) allRowKeys.push(row);
-                        });
-                      });
-                      return allRowKeys.map((rowKey: string, i: number) => (
+            <>
+              <Tabs value={tableTab} onValueChange={setTableTab} className="mb-4">
+                <TabsList>
+                  <TabsTrigger value="frequency">Frequency</TabsTrigger>
+                  {data.percentages?.row_pct && <TabsTrigger value="row_pct">Row %</TabsTrigger>}
+                  {data.percentages?.col_pct && <TabsTrigger value="col_pct">Col %</TabsTrigger>}
+                  {data.percentages?.total_pct && <TabsTrigger value="total_pct">Total %</TabsTrigger>}
+                </TabsList>
+              </Tabs>
+              <ScrollArea className="h-[400px] border rounded-md">
+                <div className="p-4">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="border p-2 text-left">{rowVars.join(' / ')}</th>
+                        {colKeys.map((col) => (
+                          <th key={col} className="border p-2 text-center">{col}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rowKeys.map((rowKey) => (
                         <tr key={rowKey}>
-                          <td className="border p-2 text-left">{rowKey}</td>
-                          {colKeys.map((colKey: string) => (
+                          <td className="border p-2 text-left font-medium">{rowKey}</td>
+                          {colKeys.map((colKey) => (
                             <td key={colKey} className="border p-2 text-center">{table[colKey][rowKey] ?? 0}</td>
                           ))}
                         </tr>
-                      ));
-                    })()}
-                  </tbody>
-                </table>
-                {/* Render stats if present */}
-                {data.stats && (
-                  <div className="mt-6 border-t pt-4">
-                    <h4 className="font-medium mb-2">Chi-Square Tests</h4>
-                    <table className="w-full border-collapse text-sm">
-                      <thead>
-                        <tr className="bg-muted/50">
-                          <th className="border p-2 text-left">Test</th>
-                          <th className="border p-2 text-center">Value</th>
-                          <th className="border p-2 text-center">df</th>
-                          <th className="border p-2 text-center">p-value</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </ScrollArea>
+              {/* Render stats if present */}
+              {data.stats && (
+                <div className="mt-6 border-t pt-4">
+                  <h4 className="font-medium mb-2">Statistics</h4>
+                  <table className="w-full border-collapse text-sm">
+                    <thead>
+                      <tr className="bg-muted/50">
+                        <th className="border p-2 text-left">Test</th>
+                        <th className="border p-2 text-center">Value</th>
+                        <th className="border p-2 text-center">df</th>
+                        <th className="border p-2 text-center">p-value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.stats.chi_square && (
                         <tr>
                           <td className="border p-2">Pearson Chi-Square</td>
-                          <td className="border p-2 text-center">{data.stats.chi_square?.chi2?.toFixed(3)}</td>
-                          <td className="border p-2 text-center">{data.stats.chi_square?.dof}</td>
-                          <td className="border p-2 text-center">{data.stats.chi_square?.p?.toFixed(3)}</td>
+                          <td className="border p-2 text-center">{data.stats.chi_square.chi2?.toFixed(3)}</td>
+                          <td className="border p-2 text-center">{data.stats.chi_square.dof}</td>
+                          <td className="border p-2 text-center">{data.stats.chi_square.p?.toFixed(3)}</td>
                         </tr>
-                        {/* Add more stats as needed */}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
+                      )}
+                      {data.stats.phi && (
+                        <tr>
+                          <td className="border p-2">Phi</td>
+                          <td className="border p-2 text-center">{data.stats.phi?.toFixed(3)}</td>
+                          <td className="border p-2 text-center">-</td>
+                          <td className="border p-2 text-center">-</td>
+                        </tr>
+                      )}
+                      {data.stats.cramers_v && (
+                        <tr>
+                          <td className="border p-2">Cramér's V</td>
+                          <td className="border p-2 text-center">{data.stats.cramers_v?.toFixed(3)}</td>
+                          <td className="border p-2 text-center">-</td>
+                          <td className="border p-2 text-center">-</td>
+                        </tr>
+                      )}
+                      {data.stats.contingency_coefficient && (
+                        <tr>
+                          <td className="border p-2">Contingency Coefficient</td>
+                          <td className="border p-2 text-center">{data.stats.contingency_coefficient?.toFixed(3)}</td>
+                          <td className="border p-2 text-center">-</td>
+                          <td className="border p-2 text-center">-</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )}
 
           {viewMode === "bar" && (

@@ -23,9 +23,30 @@ An AI-powered platform for analyzing SPSS files and performing advanced cross-ta
 - TypeScript
 - Tailwind CSS
 - Radix UI Components
+  - @radix-ui/react-accordion
+  - @radix-ui/react-checkbox
+  - @radix-ui/react-dialog
+  - @radix-ui/react-dropdown-menu
+  - @radix-ui/react-label
+  - @radix-ui/react-popover
+  - @radix-ui/react-progress
+  - @radix-ui/react-scroll-area
+  - @radix-ui/react-select
+  - @radix-ui/react-slot
+  - @radix-ui/react-tabs
+  - @radix-ui/react-toast
+  - @radix-ui/react-tooltip
 - Next Themes
 - React Context API
 - Recharts (for chart visualizations)
+- Lucide React (Icons)
+- Class Variance Authority
+- clsx
+- Tailwind Merge
+- Material UI (@mui/material, @mui/icons-material)
+- Emotion (@emotion/react, @emotion/styled)
+- Floating UI (@floating-ui/react-dom)
+- Axios
 
 ### Backend
 - Python FastAPI
