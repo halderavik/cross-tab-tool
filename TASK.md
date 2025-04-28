@@ -27,6 +27,7 @@
 - [x] AI agent chat visualization popup (bar, line, pie charts) and improved error handling (2024-06-10)
 - [x] Dynamic descriptive statistics rendering in frontend (2024-06-10)
 - [x] Custom Variable Builder: Per-condition value dropdown for selecting any value present in the data for any column (2024-06-11)
+- [x] **Custom Variable Builder moved to Variables section only; removed from cross-tabulation section for UI clarity and consistency (2024-06-11)**
 
 ## In Progress Tasks
 - [ ] File Upload & Processing System
@@ -154,5 +155,6 @@
 - [ ] Add tooltips for chart elements
 - [ ] Implement responsive design for visualizations
 - [ ] Ensure all frontend chart dependencies (e.g., recharts) are documented and installed
+- [x] Update documentation and UI to reflect that custom variables are only created/managed from the Variables section (2024-06-11)
 
 This detailed task breakdown ensures the backend will fully support all the cross-tabulation functionality visible in the frontend while maintaining statistical rigor and good performance. The phased approach allows for incremental development with clear integration points at each stage.

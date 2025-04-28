@@ -14,7 +14,7 @@ A modern web application for analyzing and processing survey data from SPSS (.sa
 - **Type Safety**: Full TypeScript support with proper type definitions
 - **AI Assistant**: Get help with your analysis from our AI agent, including visualizations and dynamic statistics
 - **Visualizations**: Generate charts and graphs from your analysis, with support for bar, line, and pie charts in the AI agent chat popup
-- **Custom Variable Builder**: Create new variables by combining values from any columns, with dropdowns showing all possible values for each condition.
+- **Custom Variable Builder**: Create new variables by combining values from any columns, with dropdowns showing all possible values for each condition. **Custom variables are now managed and created only from the Variables section/tab of the workspace.**
 
 ## Tech Stack
 

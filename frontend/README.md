@@ -14,7 +14,7 @@ An AI-powered platform for analyzing SPSS files and performing advanced cross-ta
 - AI Assistant: Get help with your analysis from our AI agent, including visualization popups and dynamic statistics
 - State Management: React Context for application-wide state
 - Type Safety: Full TypeScript implementation
-- Custom Variable Builder: Create new variables by combining values from any columns, with dropdowns showing all possible values for each condition.
+- **Custom Variable Builder**: Create new variables by combining values from any columns, with dropdowns showing all possible values for each condition. **Custom variables are now managed and created only from the Variables section/tab of the workspace.**
 
 ## Tech Stack
 
