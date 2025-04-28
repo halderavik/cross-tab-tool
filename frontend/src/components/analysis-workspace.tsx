@@ -6,16 +6,30 @@ import { VariableSelector } from "@/components/variable-selector"
 import { CrosstabBuilder } from "@/components/crosstab-builder"
 import { ResultsViewer } from "@/components/results-viewer"
 import { ChatAssistant } from "@/components/chat-assistant"
+import { AIAgentChat } from "@/components/AIAgent/AIAgentChat"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useData } from "@/contexts/data-context"
 import { FileUploader } from "@/components/file-uploader"
 import { ArrowLeft, Bot, BarChart3, Table2, FileSpreadsheet } from "lucide-react"
 import Link from "next/link"
+import { CustomVariableBuilder } from "@/components/custom-variable-builder"
+import { DataViewer } from "@/components/data-viewer"
+import type { Variable } from "@/contexts/data-context"
+import type { CustomVariable } from "@/components/custom-variable-builder"
 
 export function AnalysisWorkspace({ skipUploadCheck = false }: { skipUploadCheck?: boolean }) {
   const [activeTab, setActiveTab] = useState("variables")
-  const { dataFile = null, dataLoaded = false, variables = [] } = useData()
+  const [isDataViewerOpen, setIsDataViewerOpen] = useState(false)
+  const { dataFile = null, dataLoaded = false, variables = [], addCustomVariable } = useData()
+
+  const handleCustomVariableCreated = (customVar: CustomVariable) => {
+    addCustomVariable({
+      ...customVar,
+      id: Date.now(),
+      type: 'custom',
+    });
+  };
 
   if (!skipUploadCheck && !dataFile && !dataLoaded) {
     return (
@@ -43,26 +57,9 @@ export function AnalysisWorkspace({ skipUploadCheck = false }: { skipUploadCheck
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Data Analysis Workspace</h1>
-          <p className="text-muted-foreground">{dataFile?.name || "Your SPSS data file"}</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
-            Change File
-          </Button>
-          <Button variant="default" size="sm">
-            <Bot className="h-4 w-4 mr-2" />
-            Ask AI Assistant
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <Card className="lg:col-span-1">
+    <div className="flex w-full min-h-screen">
+      <aside className="w-[280px] bg-background border-r flex-shrink-0">
+        <Card className="w-full h-full rounded-none border-0">
           <CardHeader className="p-4">
             <CardTitle className="text-lg">Workspace</CardTitle>
           </CardHeader>
@@ -103,24 +100,50 @@ export function AnalysisWorkspace({ skipUploadCheck = false }: { skipUploadCheck
             </div>
           </CardContent>
         </Card>
-
-        <div className="lg:col-span-3">
+      </aside>
+      <main className="flex-1 flex flex-col p-8 gap-8 bg-background overflow-x-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Data Analysis Workspace</h1>
+            <p className="text-muted-foreground">{dataFile?.name || "Your SPSS data file"}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Change File
+            </Button>
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={() => setIsDataViewerOpen(true)}
+            >
+              <Table2 className="h-4 w-4 mr-2" />
+              View Data
+            </Button>
+          </div>
+        </div>
+        <div className="w-full">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsContent value="variables" className="m-0">
+            <TabsContent value="variables" className="m-0 w-full">
+              <CustomVariableBuilder onVariableCreated={handleCustomVariableCreated} />
               <VariableSelector />
             </TabsContent>
-            <TabsContent value="crosstab" className="m-0">
-              <CrosstabBuilder />
+            <TabsContent value="crosstab" className="m-0 w-full">
+              <CrosstabBuilder setActiveTab={setActiveTab} />
             </TabsContent>
-            <TabsContent value="results" className="m-0">
+            <TabsContent value="results" className="m-0 w-full">
               <ResultsViewer />
             </TabsContent>
-            <TabsContent value="assistant" className="m-0">
-              <ChatAssistant />
+            <TabsContent value="assistant" className="m-0 w-full">
+              <AIAgentChat />
             </TabsContent>
           </Tabs>
         </div>
-      </div>
+      </main>
+      <DataViewer 
+        isOpen={isDataViewerOpen} 
+        onOpenChange={setIsDataViewerOpen} 
+      />
     </div>
   )
 }

@@ -128,6 +128,11 @@ async def upload_file(
             sample_data = df.head().to_dict(orient='records')
             sample_data = convert_nan_to_null(sample_data)
             
+            # Save the processed DataFrame as a parquet file
+            indexed_path = file_path + ".parquet"
+            df.to_parquet(indexed_path)
+            logger.info(f"Saved indexed DataFrame to: {indexed_path}")
+            
         except Exception as e:
             logger.error(f"Error reading file: {str(e)}")
             os.remove(file_path)  # Clean up invalid file
@@ -143,7 +148,8 @@ async def upload_file(
                 file_info={
                     "variables": variables,
                     "sample_data": sample_data
-                }
+                },
+                indexed_path=indexed_path
             )
             db.add(db_file)
             db.commit()
@@ -158,6 +164,7 @@ async def upload_file(
                     "message": "File uploaded successfully",
                     "file_id": db_file.id,
                     "filename": db_file.filename,
+                    "filepath": db_file.filepath,
                     "variables": variables,
                     "sample_data": sample_data
                 }

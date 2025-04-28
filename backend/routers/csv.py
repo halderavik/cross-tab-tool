@@ -4,6 +4,7 @@ import pandas as pd
 import os
 from typing import List
 import logging
+import pyreadstat
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -89,4 +90,36 @@ async def get_csv_info(filename: str):
         
     except Exception as e:
         logger.error(f"Error reading CSV: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/csv-full/{filename}")
+async def get_csv_full(filename: str):
+    """
+    Return the full data for a given CSV file.
+    """
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    df = pd.read_csv(file_path)
+    return {
+        "filename": filename,
+        "rows": len(df),
+        "columns": list(df.columns),
+        "data": df.to_dict(orient="records")
+    }
+
+@router.get("/spss-full/{filename}")
+async def get_spss_full(filename: str):
+    """
+    Return the full data for a given SPSS (.sav) file.
+    """
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    df, meta = pyreadstat.read_sav(file_path)
+    return {
+        "filename": filename,
+        "rows": len(df),
+        "columns": list(df.columns),
+        "data": df.to_dict(orient="records")
+    } 

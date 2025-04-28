@@ -104,6 +104,13 @@ A modern web application for analyzing and processing survey data from SPSS (.sa
 - `GET /api/test-connection`
   - Returns: API status and timestamp
 
+### Data Retrieval
+- `GET /api/csv-full/{filename}`: Returns all rows and columns for a given CSV file.
+- `GET /api/spss-full/{filename}`: Returns all rows and columns for a given SPSS (.sav) file.
+
+### Data Viewer Improvements
+- The Data Viewer now includes a 'Load Full Data' button in the Data tab. Clicking this button fetches and displays the entire dataset (all rows) for both CSV and SPSS files, using the new backend endpoints.
+
 ## Development
 
 ### Code Style

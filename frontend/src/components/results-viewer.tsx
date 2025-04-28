@@ -6,12 +6,16 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { BarChart3, Download, FileSpreadsheet, PieChart, Share2, Table2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useData } from "@/contexts/data-context"
 
 export function ResultsViewer() {
   const [viewMode, setViewMode] = useState<"table" | "bar" | "pie">("table")
+  const { data } = useData();
+  const hasResults = !!data && data.table;
 
-  // Mock data for results
-  const hasResults = true
+  // Get row/column variable names from the analysis result if available
+  const rowVars = data?.row_vars || [];
+  const colVars = data?.col_vars || [];
 
   if (!hasResults) {
     return (
@@ -41,7 +45,11 @@ export function ResultsViewer() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <CardTitle>Analysis Results</CardTitle>
-              <CardDescription>Gender by Age Group Cross-tabulation</CardDescription>
+              <CardDescription>
+                {rowVars.length && colVars.length
+                  ? `${rowVars.join(', ')} by ${colVars.join(', ')} Cross-tabulation`
+                  : "Cross-tabulation Results"}
+              </CardDescription>
             </div>
             <div className="flex gap-2">
               <Select 
@@ -87,155 +95,96 @@ export function ResultsViewer() {
               <div className="p-4">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="bg-muted/50">
-                      <th className="border p-2 text-left" rowSpan={2}>
-                        Age Group
-                      </th>
-                      <th className="border p-2 text-center" colSpan={3}>
-                        Gender
-                      </th>
-                      <th className="border p-2 text-center" rowSpan={2}>
-                        Total
-                      </th>
-                    </tr>
-                    <tr className="bg-muted/50">
-                      <th className="border p-2 text-center">Male</th>
-                      <th className="border p-2 text-center">Female</th>
-                      <th className="border p-2 text-center">Other</th>
-                    </tr>
+                    {/* Dynamically render multi-level column headers */}
+                    {(() => {
+                      const table = data.table || {};
+                      const colKeys = Object.keys(table);
+                      if (colKeys.length === 0) return null;
+                      // Get all unique column multi-index levels
+                      const colLevels = colKeys.map(k => {
+                        if (typeof k === 'string' && k.startsWith('(') && k.endsWith(')')) {
+                          // Remove parentheses and split by comma, trim spaces, handle 'nan'
+                          return k.slice(1, -1).split(',').map(s => s.trim());
+                        }
+                        return [k];
+                      });
+                      const maxColDepth = Math.max(...colLevels.map(l => Array.isArray(l) ? l.length : 1));
+                      // Build header rows
+                      let headerRows: any[] = [];
+                      for (let level = 0; level < maxColDepth; level++) {
+                        let row: any[] = [];
+                        let lastVal = null, span = 0;
+                        for (let i = 0; i < colLevels.length; i++) {
+                          let val = Array.isArray(colLevels[i]) ? colLevels[i][level] : (level === 0 ? colLevels[i] : "");
+                          if (val === lastVal) {
+                            span++;
+                          } else {
+                            if (lastVal !== null) {
+                              row.push(<th className="border p-2 text-center" colSpan={span}>{lastVal}</th>);
+                            }
+                            lastVal = val;
+                            span = 1;
+                          }
+                        }
+                        if (lastVal !== null) {
+                          row.push(<th className="border p-2 text-center" colSpan={span}>{lastVal}</th>);
+                        }
+                        headerRows.push(<tr key={level} className="bg-muted/50">{level === 0 && rowVars.length ? <th className="border p-2 text-left" rowSpan={maxColDepth}>{rowVars.join(' / ')}</th> : null}{row}</tr>);
+                      }
+                      return headerRows;
+                    })()}
                   </thead>
                   <tbody>
-                    <tr>
-                      <td className="border p-2 font-medium">18-24</td>
-                      <td className="border p-2 text-center">
-                        <div>42</div>
-                        <div className="text-xs text-muted-foreground">32.3%</div>
-                      </td>
-                      <td className="border p-2 text-center">
-                        <div>56</div>
-                        <div className="text-xs text-muted-foreground">43.1%</div>
-                      </td>
-                      <td className="border p-2 text-center">
-                        <div>8</div>
-                        <div className="text-xs text-muted-foreground">6.2%</div>
-                      </td>
-                      <td className="border p-2 text-center font-medium">
-                        <div>106</div>
-                        <div className="text-xs text-muted-foreground">26.5%</div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="border p-2 font-medium">25-34</td>
-                      <td className="border p-2 text-center">
-                        <div>78</div>
-                        <div className="text-xs text-muted-foreground">39.0%</div>
-                      </td>
-                      <td className="border p-2 text-center">
-                        <div>82</div>
-                        <div className="text-xs text-muted-foreground">41.0%</div>
-                      </td>
-                      <td className="border p-2 text-center">
-                        <div>4</div>
-                        <div className="text-xs text-muted-foreground">2.0%</div>
-                      </td>
-                      <td className="border p-2 text-center font-medium">
-                        <div>164</div>
-                        <div className="text-xs text-muted-foreground">41.0%</div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="border p-2 font-medium">35-44</td>
-                      <td className="border p-2 text-center">
-                        <div>45</div>
-                        <div className="text-xs text-muted-foreground">45.0%</div>
-                      </td>
-                      <td className="border p-2 text-center">
-                        <div>52</div>
-                        <div className="text-xs text-muted-foreground">52.0%</div>
-                      </td>
-                      <td className="border p-2 text-center">
-                        <div>3</div>
-                        <div className="text-xs text-muted-foreground">3.0%</div>
-                      </td>
-                      <td className="border p-2 text-center font-medium">
-                        <div>100</div>
-                        <div className="text-xs text-muted-foreground">25.0%</div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="border p-2 font-medium">45-54</td>
-                      <td className="border p-2 text-center">
-                        <div>12</div>
-                        <div className="text-xs text-muted-foreground">40.0%</div>
-                      </td>
-                      <td className="border p-2 text-center">
-                        <div>18</div>
-                        <div className="text-xs text-muted-foreground">60.0%</div>
-                      </td>
-                      <td className="border p-2 text-center">
-                        <div>0</div>
-                        <div className="text-xs text-muted-foreground">0.0%</div>
-                      </td>
-                      <td className="border p-2 text-center font-medium">
-                        <div>30</div>
-                        <div className="text-xs text-muted-foreground">7.5%</div>
-                      </td>
-                    </tr>
-                    <tr className="bg-muted/30">
-                      <td className="border p-2 font-medium">Total</td>
-                      <td className="border p-2 text-center font-medium">
-                        <div>177</div>
-                        <div className="text-xs text-muted-foreground">44.3%</div>
-                      </td>
-                      <td className="border p-2 text-center font-medium">
-                        <div>208</div>
-                        <div className="text-xs text-muted-foreground">52.0%</div>
-                      </td>
-                      <td className="border p-2 text-center font-medium">
-                        <div>15</div>
-                        <div className="text-xs text-muted-foreground">3.8%</div>
-                      </td>
-                      <td className="border p-2 text-center font-medium">
-                        <div>400</div>
-                        <div className="text-xs text-muted-foreground">100.0%</div>
-                      </td>
-                    </tr>
+                    {/* Dynamically render all rows */}
+                    {(() => {
+                      const table = data.table || {};
+                      const rowKeys = Object.keys(table[colVars && colVars.length ? Object.keys(table)[0] : ""] || {});
+                      const colKeys = Object.keys(table);
+                      if (colKeys.length === 0) return null;
+                      // If table is 2D: table[col][row] = value
+                      // Build all row keys from the first column
+                      const allRowKeys: string[] = [];
+                      colKeys.forEach(col => {
+                        Object.keys(table[col] || {}).forEach(row => {
+                          if (!allRowKeys.includes(row)) allRowKeys.push(row);
+                        });
+                      });
+                      return allRowKeys.map((rowKey: string, i: number) => (
+                        <tr key={rowKey}>
+                          <td className="border p-2 text-left">{rowKey}</td>
+                          {colKeys.map((colKey: string) => (
+                            <td key={colKey} className="border p-2 text-center">{table[colKey][rowKey] ?? 0}</td>
+                          ))}
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
-
-                <div className="mt-6 border-t pt-4">
-                  <h4 className="font-medium mb-2">Chi-Square Tests</h4>
-                  <table className="w-full border-collapse text-sm">
-                    <thead>
-                      <tr className="bg-muted/50">
-                        <th className="border p-2 text-left">Test</th>
-                        <th className="border p-2 text-center">Value</th>
-                        <th className="border p-2 text-center">df</th>
-                        <th className="border p-2 text-center">p-value</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td className="border p-2">Pearson Chi-Square</td>
-                        <td className="border p-2 text-center">12.487</td>
-                        <td className="border p-2 text-center">6</td>
-                        <td className="border p-2 text-center">0.052</td>
-                      </tr>
-                      <tr>
-                        <td className="border p-2">Likelihood Ratio</td>
-                        <td className="border p-2 text-center">13.842</td>
-                        <td className="border p-2 text-center">6</td>
-                        <td className="border p-2 text-center">0.031</td>
-                      </tr>
-                      <tr>
-                        <td className="border p-2">N of Valid Cases</td>
-                        <td className="border p-2 text-center">400</td>
-                        <td className="border p-2 text-center"></td>
-                        <td className="border p-2 text-center"></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                {/* Render stats if present */}
+                {data.stats && (
+                  <div className="mt-6 border-t pt-4">
+                    <h4 className="font-medium mb-2">Chi-Square Tests</h4>
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="border p-2 text-left">Test</th>
+                          <th className="border p-2 text-center">Value</th>
+                          <th className="border p-2 text-center">df</th>
+                          <th className="border p-2 text-center">p-value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="border p-2">Pearson Chi-Square</td>
+                          <td className="border p-2 text-center">{data.stats.chi_square?.chi2?.toFixed(3)}</td>
+                          <td className="border p-2 text-center">{data.stats.chi_square?.dof}</td>
+                          <td className="border p-2 text-center">{data.stats.chi_square?.p?.toFixed(3)}</td>
+                        </tr>
+                        {/* Add more stats as needed */}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </ScrollArea>
           )}

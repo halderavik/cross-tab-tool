@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
-import { BarChart3, FileSpreadsheet, Home, Menu, MessageSquareText, X } from "lucide-react"
+import { BarChart3, FileSpreadsheet, Home, Menu, MessageSquareText, X, Variable } from "lucide-react"
 import { useState } from "react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -14,6 +14,7 @@ export function Header() {
 
   const navigation = [
     { name: "Home", href: "/", icon: Home },
+    { name: "Variables", href: "/variables", icon: Variable },
     { name: "Analyze", href: "/analyze", icon: BarChart3 },
     { name: "Data Files", href: "/files", icon: FileSpreadsheet },
     { name: "Chat Assistant", href: "/chat", icon: MessageSquareText },

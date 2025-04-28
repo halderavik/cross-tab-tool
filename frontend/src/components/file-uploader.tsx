@@ -16,7 +16,7 @@ export function FileUploader() {
   const [isUploading, setIsUploading] = React.useState(false)
   const [progress, setProgress] = React.useState(0)
   const { toast } = useToast()
-  const { setDataFile, setDataLoaded, setVariables } = useData()
+  const { setDataFile, setDataLoaded, setVariables, setSampleData } = useData()
   const router = useRouter()
 
   const onDrop = React.useCallback(async (acceptedFiles: File[]) => {
@@ -73,7 +73,12 @@ export function FileUploader() {
       
       // Update the data context with the uploaded file info
       if (data && typeof data === 'object' && 'variables' in data) {
-        setDataFile(data)
+        setDataFile({
+          file: acceptedFiles[0],
+          filePath: data.filepath || null,
+          name: acceptedFiles[0]?.name || 'Untitled',
+          id: data.file_id || null
+        })
         setDataLoaded(true)
         console.log('Backend variables:', data.variables)
         const mappedVariables = Array.isArray(data.variables)
@@ -86,6 +91,15 @@ export function FileUploader() {
           : [];
         console.log('Mapped variables:', mappedVariables)
         setVariables(mappedVariables)
+        
+        // Set sample data
+        if (data.sample_data) {
+          setSampleData({
+            columns: data.variables,
+            data: data.sample_data
+          })
+        }
+        
         router.push("/analyze")
       }
 
@@ -104,7 +118,7 @@ export function FileUploader() {
       setIsUploading(false)
       setProgress(100)
     }
-  }, [toast, setDataFile, setDataLoaded, setVariables, router])
+  }, [toast, setDataFile, setDataLoaded, setVariables, setSampleData, router])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

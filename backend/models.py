@@ -15,6 +15,7 @@ class UploadedFile(Base):
     uploaded_at = Column(DateTime, default=datetime.utcnow)
     status = Column(String(20), default="pending")
     file_info = Column(JSON, nullable=True)
+    indexed_path = Column(String(512), nullable=True)  # Path to processed DataFrame
 
     # Relationships
     variables = relationship("VariableDefinition", back_populates="file")

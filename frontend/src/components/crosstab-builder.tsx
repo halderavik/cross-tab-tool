@@ -13,12 +13,42 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useData } from "@/contexts/data-context"
+import axios from "axios"
 
-export function CrosstabBuilder() {
+interface CrosstabBuilderProps {
+  setActiveTab?: (tab: string) => void;
+}
+
+interface CustomVariable {
+  name: string;
+  label: string;
+  conditions: {
+    id: string;
+    operator: 'AND' | 'OR';
+    column: string;
+    value: string;
+    comparison: 'equals' | 'contains' | 'greater_than' | 'less_than';
+  }[];
+}
+
+export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
   const [rowVariables, setRowVariables] = useState<string[]>([])
   const [columnVariables, setColumnVariables] = useState<string[]>([])
   const [bannerVariables, setBannerVariables] = useState<string[]>([])
   const [selectedTab, setSelectedTab] = useState("basic")
+  const { dataFile, setData, isLoading, setIsLoading, error, setError } = useData()
+  const [chiSquare, setChiSquare] = useState(false)
+  const [phiCramer, setPhiCramer] = useState(false)
+  const [contingency, setContingency] = useState(false)
+  const [rowPct, setRowPct] = useState(true)
+  const [colPct, setColPct] = useState(true)
+  const [totalPct, setTotalPct] = useState(false)
+  const [decimalPlaces, setDecimalPlaces] = useState(1)
+  const [missing, setMissing] = useState("exclude")
+  const [hideEmpty, setHideEmpty] = useState(false)
+  const [enableSig, setEnableSig] = useState(false)
+  const [sigLevel, setSigLevel] = useState(0.05)
+  const [customVariables, setCustomVariables] = useState<CustomVariable[]>([])
 
   // Use variables from context
   const { variables } = useData()
@@ -60,6 +90,40 @@ export function CrosstabBuilder() {
   }
 
   const canRunAnalysis = rowVariables.length > 0 && (columnVariables.length > 0 || bannerVariables.length > 0)
+
+  const handleCustomVariableCreated = (variable: CustomVariable) => {
+    setCustomVariables([...customVariables, variable])
+  }
+
+  const handleRunAnalysis = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      if (!dataFile?.filePath) {
+        throw new Error("No data file selected. Please upload a file first.")
+      }
+      
+      const payload = {
+        file_path: dataFile.filePath,
+        row_vars: rowVariables,
+        col_vars: columnVariables,
+        statistics: [chiSquare && "chi-square", phiCramer && "phi-cramer", contingency && "contingency"].filter(Boolean),
+        display: { row_pct: rowPct, col_pct: colPct, total_pct: totalPct },
+        significance: { enable: enableSig, level: sigLevel },
+        decimal_places: decimalPlaces,
+        missing,
+        hide_empty: hideEmpty,
+        custom_variables: customVariables
+      }
+      const res = await axios.post("/api/analyze-crosstab", payload)
+      setData({ ...res.data, row_vars: rowVariables, col_vars: columnVariables })
+      if (setActiveTab) setActiveTab("results")
+    } catch (err: any) {
+      setError(err.response?.data?.detail || err.message || "Analysis failed")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -205,29 +269,29 @@ export function CrosstabBuilder() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="chi-square" />
+                          <Checkbox id="chi-square" checked={chiSquare} onCheckedChange={checked => setChiSquare(checked === true)} />
                           <Label htmlFor="chi-square">Chi-square</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="phi-cramer" />
+                          <Checkbox id="phi-cramer" checked={phiCramer} onCheckedChange={checked => setPhiCramer(checked === true)} />
                           <Label htmlFor="phi-cramer">Phi & Cramer's V</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="contingency" />
+                          <Checkbox id="contingency" checked={contingency} onCheckedChange={checked => setContingency(checked === true)} />
                           <Label htmlFor="contingency">Contingency Coefficient</Label>
                         </div>
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="row-pct" defaultChecked />
+                          <Checkbox id="row-pct" checked={rowPct} onCheckedChange={checked => setRowPct(checked === true)} />
                           <Label htmlFor="row-pct">Row Percentages</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="col-pct" defaultChecked />
+                          <Checkbox id="col-pct" checked={colPct} onCheckedChange={checked => setColPct(checked === true)} />
                           <Label htmlFor="col-pct">Column Percentages</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="total-pct" />
+                          <Checkbox id="total-pct" checked={totalPct} onCheckedChange={checked => setTotalPct(checked === true)} />
                           <Label htmlFor="total-pct">Total Percentages</Label>
                         </div>
                       </div>
@@ -241,7 +305,7 @@ export function CrosstabBuilder() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="decimal-places">Decimal Places</Label>
-                          <Select defaultValue="1">
+                          <Select value={decimalPlaces.toString()} onValueChange={(value) => setDecimalPlaces(Number(value))}>
                             <SelectTrigger id="decimal-places">
                               <SelectValue placeholder="Select decimal places" />
                             </SelectTrigger>
@@ -255,7 +319,7 @@ export function CrosstabBuilder() {
                         </div>
                         <div>
                           <Label htmlFor="missing-values">Missing Values</Label>
-                          <Select defaultValue="exclude">
+                          <Select value={missing} onValueChange={(value) => setMissing(value)}>
                             <SelectTrigger id="missing-values">
                               <SelectValue placeholder="Handle missing values" />
                             </SelectTrigger>
@@ -267,7 +331,7 @@ export function CrosstabBuilder() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="hide-empty" />
+                        <Checkbox id="hide-empty" checked={hideEmpty} onCheckedChange={checked => setHideEmpty(checked === true)} />
                         <Label htmlFor="hide-empty">Hide Empty Rows/Columns</Label>
                       </div>
                     </div>
@@ -278,12 +342,12 @@ export function CrosstabBuilder() {
                   <AccordionContent>
                     <div className="space-y-4">
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="enable-sig" />
+                        <Checkbox id="enable-sig" checked={enableSig} onCheckedChange={checked => setEnableSig(checked === true)} />
                         <Label htmlFor="enable-sig">Enable Significance Testing</Label>
                       </div>
                       <div>
                         <Label htmlFor="sig-level">Significance Level</Label>
-                        <Select defaultValue="0.05" disabled>
+                        <Select value={sigLevel.toString()} onValueChange={(value) => setSigLevel(Number(value))}>
                           <SelectTrigger id="sig-level">
                             <SelectValue placeholder="Select significance level" />
                           </SelectTrigger>
@@ -303,9 +367,7 @@ export function CrosstabBuilder() {
               <Button variant="outline">Reset</Button>
               <Button
                 disabled={!canRunAnalysis}
-                onClick={() => {
-                  /* Run analysis */
-                }}
+                onClick={handleRunAnalysis}
               >
                 Run Analysis
               </Button>
@@ -458,11 +520,11 @@ export function CrosstabBuilder() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="banner-counts" defaultChecked />
+                          <Checkbox id="banner-counts" />
                           <Label htmlFor="banner-counts">Show Counts</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Checkbox id="banner-col-pct" defaultChecked />
+                          <Checkbox id="banner-col-pct" />
                           <Label htmlFor="banner-col-pct">Column Percentages</Label>
                         </div>
                       </div>

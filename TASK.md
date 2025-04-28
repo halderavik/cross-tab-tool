@@ -28,6 +28,8 @@
 - [x] Dynamic descriptive statistics rendering in frontend (2024-06-10)
 - [x] Custom Variable Builder: Per-condition value dropdown for selecting any value present in the data for any column (2024-06-11)
 - [x] **Custom Variable Builder moved to Variables section only; removed from cross-tabulation section for UI clarity and consistency (2024-06-11)**
+- [x] Add backend endpoints to retrieve full data for CSV and SPSS files (`/api/csv-full/{filename}` and `/api/spss-full/{filename}`) (2024-06-12)
+- [x] Add 'Load Full Data' button to Data Viewer in frontend to fetch and display all rows for CSV and SPSS files (2024-06-12)
 
 ## In Progress Tasks
 - [ ] File Upload & Processing System

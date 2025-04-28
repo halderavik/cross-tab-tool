@@ -1,17 +1,11 @@
-import type { Metadata } from "next"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileUploader } from "@/components/file-uploader"
-import { RecentFiles } from "@/components/recent-files"
-import { Features } from "@/components/features"
-import { HeroSection } from "@/components/hero-section"
-import Link from "next/link"
-import { TestConnection } from "@/components/test-connection"
-
-export const metadata: Metadata = {
-  title: "Data Analyzer - AI-Powered Data Analysis",
-  description: "Upload SPSS (.sav) or CSV files and perform advanced cross-tabulations with AI assistance",
-}
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileUploader } from "@/components/file-uploader";
+import { RecentFiles } from "@/components/recent-files";
+import { Features } from "@/components/features";
+import { HeroSection } from "@/components/hero-section";
+import Link from "next/link";
+import { TestConnection } from "@/components/test-connection";
 
 export default function Home() {
   return (

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function AnalyzePage() {
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="w-full min-h-screen px-0 py-0">
       <AnalysisWorkspace skipUploadCheck={true} />
     </div>
   )

@@ -82,4 +82,44 @@ def test_get_variable_summary_before_read():
     """Test error when trying to get variable summary before reading file."""
     processor = SPSSProcessor(SAMPLE_FILE_PATH)
     with pytest.raises(Exception, match="Data not loaded"):
-        processor.get_variable_summary() 
+        processor.get_variable_summary()
+
+def test_get_crosstab_expected_use():
+    """Test generating a crosstab for two categorical variables."""
+    processor = SPSSProcessor(SAMPLE_FILE_PATH)
+    processor.read_file()
+    # Use the first two columns as example categorical variables
+    df = processor.data
+    cat_vars = [col for col in df.columns if df[col].dtype == 'O']
+    if len(cat_vars) < 2:
+        pytest.skip("Not enough categorical variables in sample data.")
+    crosstab = processor.get_crosstab(cat_vars[0], cat_vars[1])
+    assert isinstance(crosstab, dict)
+    assert len(crosstab) > 0
+
+def test_get_crosstab_with_missing_values():
+    """Test crosstab generation when variables contain missing values."""
+    processor = SPSSProcessor(SAMPLE_FILE_PATH)
+    processor.read_file()
+    df = processor.data.copy()
+    cat_vars = [col for col in df.columns if df[col].dtype == 'O']
+    if len(cat_vars) < 2:
+        pytest.skip("Not enough categorical variables in sample data.")
+    # Inject missing values
+    df.loc[df.index[:2], cat_vars[0]] = None
+    processor.data = df
+    crosstab = processor.get_crosstab(cat_vars[0], cat_vars[1])
+    assert isinstance(crosstab, dict)
+    # Should still return a valid crosstab
+
+def test_get_crosstab_invalid_variable():
+    """Test error handling for invalid variable names and data not loaded."""
+    processor = SPSSProcessor(SAMPLE_FILE_PATH)
+    # Data not loaded
+    with pytest.raises(Exception, match="Data not loaded"):
+        processor.get_crosstab("var1", "var2")
+    # Load data
+    processor.read_file()
+    # Invalid variable names
+    with pytest.raises(Exception):
+        processor.get_crosstab("nonexistent_var1", "nonexistent_var2") 

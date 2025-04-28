@@ -7,7 +7,7 @@ export function HeroSection() {
   return (
     <div className="flex flex-col items-center text-center">
       <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl max-w-3xl">
-        AI-Powered Cross-Tab platform
+        AI-Powered Cross-Tab 
       </h1>
       <p className="mt-6 text-lg leading-8 text-muted-foreground max-w-2xl">
         Upload your SPSS files and perform advanced cross-tabulations with AI assistance. Our

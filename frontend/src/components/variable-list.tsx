@@ -1,4 +1,4 @@
-import { useData } from '@/lib/data-context'
+import { useData } from '@/contexts/data-context'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
