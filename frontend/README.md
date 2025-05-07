@@ -54,7 +54,12 @@ An AI-powered platform for analyzing SPSS files and performing advanced cross-ta
 - SQLAlchemy ORM
 - PyReadStat for SPSS file processing
 - pandas
-- Pytest for testing
+- scipy (for statistical tests)
+- numpy
+- pytest (for testing)
+- black (for code formatting)
+- pytest-asyncio (for async testing)
+- httpx (for async HTTP client)
 
 ## Prerequisites
 
@@ -124,9 +129,10 @@ An AI-powered platform for analyzing SPSS files and performing advanced cross-ta
 - Maintain consistent naming conventions
 - Implement proper type definitions
 - Use React Context for state management
+- Use black for Python code formatting
 
 ### Testing
-- Backend: pytest
+- Backend: pytest with pytest-asyncio for async tests
 - Frontend: Jest
 - Type checking with TypeScript
 

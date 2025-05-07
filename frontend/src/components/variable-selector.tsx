@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Search, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { VariableInfoDialog } from "@/components/variable-info-dialog"
-import { useData } from "@/contexts/data-context"
+import { useData, Variable } from "@/contexts/data-context"
 
 export function VariableSelector() {
   const { variables } = useData()
@@ -18,13 +18,7 @@ export function VariableSelector() {
   const [selectedType, setSelectedType] = useState<string[]>([])
   const [selectedVariables, setSelectedVariables] = useState<string[]>([])
   const [infoDialogOpen, setInfoDialogOpen] = useState(false)
-  const [currentVariable, setCurrentVariable] = useState<{
-    id: number
-    name: string
-    label: string
-    type: string
-    values: string[]
-  } | null>(null)
+  const [currentVariable, setCurrentVariable] = useState<Variable | null>(null)
 
   // Debug logs
   console.log("All variables from context:", variables)
@@ -54,7 +48,7 @@ export function VariableSelector() {
     }
   }
 
-  const showVariableInfo = (variable: any) => {
+  const showVariableInfo = (variable: Variable) => {
     setCurrentVariable(variable)
     setInfoDialogOpen(true)
   }
@@ -153,7 +147,7 @@ export function VariableSelector() {
                       />
                     </div>
                     <div className="col-span-3 font-medium">{variable.name}</div>
-                    <div className="col-span-5 truncate">{variable.label}</div>
+                    <div className="col-span-5 truncate">{variable.label || '-'}</div>
                     <div className="col-span-2">
                       <Badge variant="outline" className="capitalize">
                         {variable.type}

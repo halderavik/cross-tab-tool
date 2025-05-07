@@ -15,6 +15,17 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useData } from "@/contexts/data-context"
 import axios from "axios"
 
+// Add API configuration
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+// Create axios instance with base URL
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
 interface CrosstabBuilderProps {
   setActiveTab?: (tab: string) => void;
 }
@@ -117,9 +128,13 @@ export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
       if (!dataFile?.filePath) {
         throw new Error("No data file selected. Please upload a file first.")
       }
+
+      // Ensure the file path is properly formatted
+      const filePath = dataFile.filePath.replace(/\\/g, '/')
+      
       const subgroup = subgroupVar && subgroupValues.length > 0 ? { [subgroupVar]: subgroupValues.length === 1 ? subgroupValues[0] : subgroupValues } : undefined;
       const payload = {
-        file_path: dataFile.filePath,
+        file_path: filePath,
         row_vars: rowVariables,
         col_vars: columnVariables,
         statistics: [chiSquare && "chi-square", phiCramer && "phi-cramer", contingency && "contingency"].filter(Boolean),
@@ -132,11 +147,40 @@ export function CrosstabBuilder({ setActiveTab }: CrosstabBuilderProps) {
         weight_var: weightVar || undefined,
         subgroup: subgroup
       }
-      const res = await axios.post("/api/analyze-crosstab", payload)
+
+      // Use the configured API instance
+      const res = await api.post("/api/analyze-crosstab", payload)
+      
+      if (!res.data) {
+        throw new Error("No data received from the server")
+      }
+
       setData({ ...res.data, row_vars: rowVariables, col_vars: columnVariables })
       if (setActiveTab) setActiveTab("results")
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || "Analysis failed")
+      console.error("Analysis error:", err)
+      let errorMessage = "Analysis failed"
+      
+      if (err.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        errorMessage = err.response.data?.detail || err.response.data?.message || `Server error: ${err.response.status}`
+      } else if (err.request) {
+        // The request was made but no response was received
+        errorMessage = "No response from server. Please check if the backend is running."
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        errorMessage = err.message
+      }
+      
+      setError(errorMessage)
+      
+      // Show a more user-friendly error message for specific cases
+      if (errorMessage.includes("codec can't decode")) {
+        setError("Unable to read the SPSS file. Please ensure the file is not corrupted and try again.")
+      } else if (errorMessage.includes("ECONNREFUSED")) {
+        setError("Cannot connect to the server. Please ensure the backend is running.")
+      }
     } finally {
       setIsLoading(false)
     }

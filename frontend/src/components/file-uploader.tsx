@@ -12,6 +12,14 @@ import { useRouter } from "next/navigation"
 // Temporarily hardcoded for testing
 const BACKEND_URL = "http://localhost:8000"
 
+interface VariableData {
+  name: string;
+  label?: string;
+  type?: string;
+  value_labels?: Record<string | number, string>;
+  missing_values?: (string | number)[];
+}
+
 export function FileUploader() {
   const [isUploading, setIsUploading] = React.useState(false)
   const [progress, setProgress] = React.useState(0)
@@ -69,10 +77,15 @@ export function FileUploader() {
       }
 
       const data = await response.json()
-      console.log('Upload successful:', data)
+      console.log('=== DEBUG: File Upload Response ===')
+      console.log('Raw response:', data)
+      console.log('Sample data:', data.sample_data ? data.sample_data.slice(0, 2) : 'No sample data')
+      console.log('Variables:', data.variables)
+      console.log('Columns:', data.columns)
+      console.log('================================')
       
       // Update the data context with the uploaded file info
-      if (data && typeof data === 'object' && 'variables' in data) {
+      if (data && typeof data === 'object') {
         setDataFile({
           file: acceptedFiles[0],
           filePath: data.filepath || null,
@@ -80,24 +93,97 @@ export function FileUploader() {
           id: data.file_id || null
         })
         setDataLoaded(true)
-        console.log('Backend variables:', data.variables)
-        const mappedVariables = Array.isArray(data.variables)
-          ? data.variables.map((name: string, idx: number) => ({
-              id: idx,
-              name,
-              label: name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
-              type: "numeric", // Default type; update if you have type info
-            }))
-          : [];
-        console.log('Mapped variables:', mappedVariables)
-        setVariables(mappedVariables)
         
-        // Set sample data
+        // Map variables if they exist and are in the correct format
+        let mappedVariables = []
+        
+        // Log the structure of data.variables
+        console.log('=== DEBUG: Variables Data ===')
+        if (data.variables) {
+          console.log('Variables exists:', {
+            type: typeof data.variables,
+            isArray: Array.isArray(data.variables),
+            keys: Object.keys(data.variables),
+            hasData: data.variables && Object.keys(data.variables).length > 0
+          })
+        } else {
+          console.log('No variables data found')
+        }
+        
+        if (data.variables && typeof data.variables === 'object') {
+          try {
+            if (Array.isArray(data.variables)) {
+              console.log('Processing array of column names')
+              // Convert array of column names to proper variable objects
+              mappedVariables = data.variables
+                .filter((name: string) => typeof name === 'string' && name.length > 0)
+                .map((name: string, idx: number) => ({
+                  id: idx,
+                  name: name,
+                  label: name.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase()),
+                  type: "numeric", // Default type since we don't have metadata
+                  value_labels: {},
+                  missing_values: [],
+                }))
+            } else {
+              // Handle object format (keeping existing code)
+              console.log('Processing object format variables')
+              mappedVariables = Object.entries(data.variables)
+                .filter(([name, meta]) => name && meta)
+                .map(([name, meta], idx) => {
+                  const m = meta as any
+                  return {
+                    id: idx,
+                    name: name,
+                    label: (m.label as string) || name.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase()),
+                    type: (m.type as string) || "numeric",
+                    value_labels: m.value_labels || {},
+                    missing_values: m.missing_values || [],
+                  }
+                })
+            }
+            
+            console.log('Mapped variables result:', {
+              count: mappedVariables.length,
+              firstVariable: mappedVariables[0],
+              sampleVariables: mappedVariables.slice(0, 5) // Log first 5 variables
+            })
+            
+            if (mappedVariables.length > 0) {
+              console.log(`Successfully mapped ${mappedVariables.length} variables`)
+              setVariables(mappedVariables)
+            } else {
+              console.warn('No variables were mapped')
+              setVariables([])
+            }
+          } catch (error) {
+            console.error('Error mapping variables:', error)
+            console.error('Original variables data:', data.variables)
+            setVariables([])
+          }
+        } else {
+          console.warn('Invalid or missing variables data in response')
+          setVariables([])
+        }
+        
+        // Handle sample data
         if (data.sample_data) {
+          console.log('Processing sample data:', {
+            rowCount: data.sample_data.length,
+            columns: data.columns || Object.keys(data.sample_data[0] || {})
+          })
+          
+          const sampleColumns = Array.isArray(data.columns) 
+            ? data.columns 
+            : Object.keys(data.sample_data[0] || {})
+          
           setSampleData({
-            columns: data.variables,
+            columns: sampleColumns,
             data: data.sample_data
           })
+        } else {
+          console.warn('No sample data in response')
+          setSampleData({ columns: [], data: [] })
         }
         
         router.push("/analyze")

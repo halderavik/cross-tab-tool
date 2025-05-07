@@ -1,13 +1,15 @@
 import warnings
 warnings.filterwarnings("ignore", message=".*chained assignment.*", category=FutureWarning)
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse
 import logging
 from routers import upload, csv, ai_agent
 from datetime import datetime
 from routers.analyze import router as analyze_router
 import sys
+import traceback
 
 # Configure logging
 logging.basicConfig(
@@ -23,6 +25,21 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc",
 )
+
+@app.middleware("http")
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as e:
+        logger.error(f"Unhandled error: {str(e)}")
+        logger.error(traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": f"Internal server error: {str(e)}",
+                "type": type(e).__name__
+            }
+        )
 
 # Configure CORS
 app.add_middleware(

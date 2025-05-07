@@ -4,7 +4,30 @@ from typing import List, Optional, Dict, Any
 import pandas as pd
 import numpy as np
 from scipy import stats
-from ..core.data_processor import DataProcessor
+import pyreadstat
+import logging
+import os
+from app.core.data_processor import DataProcessor
+
+logger = logging.getLogger(__name__)
+
+def load_spss_file(file_path: str) -> pd.DataFrame:
+    """Load SPSS file with multiple encoding attempts."""
+    encodings = ['latin1', 'cp1252', 'iso-8859-1', 'utf-8']
+    last_error = None
+    
+    for encoding in encodings:
+        try:
+            logger.info(f"Attempting to read SPSS file with {encoding} encoding")
+            df, meta = pyreadstat.read_sav(file_path, encoding=encoding)
+            logger.info(f"Successfully read SPSS file with {encoding} encoding")
+            return df
+        except Exception as e:
+            last_error = e
+            logger.warning(f"Failed to read with {encoding} encoding: {str(e)}")
+            continue
+    
+    raise ValueError(f"Failed to read SPSS file with any encoding. Last error: {str(last_error)}")
 
 router = APIRouter()
 
@@ -29,8 +52,13 @@ class CrosstabResponse(BaseModel):
 async def analyze_crosstab(request: CrosstabRequest):
     try:
         # Load the data
-        data_processor = DataProcessor()
-        df = data_processor.load_data(request.file_path)
+        file_ext = os.path.splitext(request.file_path)[1].lower()
+        if file_ext == '.sav':
+            df = load_spss_file(request.file_path)
+        else:
+            df = pd.read_csv(request.file_path)
+        
+        logger.info(f"Successfully loaded data. Shape: {df.shape}")
         
         # Process custom variables if any
         if request.custom_variables:

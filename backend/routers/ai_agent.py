@@ -7,12 +7,14 @@ from pydantic import BaseModel
 from typing import Dict, Any, Optional
 import pandas as pd
 import os
+import logging
 
 from ai.agent import CrossTabAgent, AnalysisContext, AgentResponse
 from models import UploadedFile
 from database import SessionLocal, get_db
 from sqlalchemy.orm import Session
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/ai", tags=["ai_agent"])
 
 class AgentQuery(BaseModel):
@@ -39,45 +41,55 @@ async def analyze_with_agent(
     Returns:
         AgentResponse with analysis results
     """
-    # Get the uploaded file
-    file = db.query(UploadedFile).filter(UploadedFile.id == query.file_id).first()
-    if not file:
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    # Load the dataset
     try:
-        if file.indexed_path and os.path.exists(file.indexed_path):
-            dataset = pd.read_parquet(file.indexed_path)
-        else:
-            if file.file_type == 'SPSS':
-                dataset = pd.read_spss(file.filepath)
-            elif file.file_type == 'CSV':
-                dataset = pd.read_csv(file.filepath)
+        # Get the uploaded file
+        file = db.query(UploadedFile).filter(UploadedFile.id == query.file_id).first()
+        if not file:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Load the dataset using the agent's _load_data method
+        try:
+            if file.indexed_path and os.path.exists(file.indexed_path):
+                dataset = pd.read_parquet(file.indexed_path)
             else:
-                raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.file_type}")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error loading dataset: {str(e)}")
-    
-    # Get variable metadata
-    variable_metadata = {
-        col: {
-            "type": str(dataset[col].dtype),
-            "unique_values": len(dataset[col].unique()),
-            "missing_values": dataset[col].isnull().sum()
+                dataset = agent._load_data(file.filepath)
+            logger.info(f"Successfully loaded dataset. Shape: {dataset.shape}")
+        except Exception as e:
+            logger.error(f"Error loading dataset: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Error loading dataset: {str(e)}")
+        
+        # Get variable metadata
+        variable_metadata = {
+            col: {
+                "type": str(dataset[col].dtype),
+                "unique_values": len(dataset[col].unique()),
+                "missing_values": dataset[col].isnull().sum()
+            }
+            for col in dataset.columns
         }
-        for col in dataset.columns
-    }
-    
-    # Create analysis context
-    context = AnalysisContext(
-        dataset=dataset,
-        variable_metadata=variable_metadata,
-        current_analysis=query.context
-    )
-    
-    # Get analysis from agent
-    try:
-        response = agent.analyze_crosstab(context, query.query)
-        return response
+        
+        # Create analysis context
+        context = AnalysisContext(
+            dataset=dataset,
+            variable_metadata=variable_metadata,
+            current_analysis=query.context,
+            file_path=file.filepath,
+            multiple_response_vars=query.context.get('multiple_response_vars') if query.context else None
+        )
+        
+        # Get analysis from agent
+        try:
+            response_dict = agent.analyze_crosstab(context, query.query)
+            logger.info(f"Successfully generated analysis response: {response_dict}")
+            
+            # Convert dictionary to AgentResponse
+            response = AgentResponse(**response_dict)
+            logger.info(f"Converted to AgentResponse: {response}")
+            
+            return response
+        except Exception as e:
+            logger.error(f"Error in analysis: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error in analysis: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error in analysis: {str(e)}") 
+        logger.error(f"Unexpected error in analyze_with_agent: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}") 

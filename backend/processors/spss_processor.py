@@ -44,25 +44,41 @@ class SPSSProcessor:
         try:
             logger.info(f"Reading SPSS file: {self.file_path}")
             
-            # Read the SPSS file
-            df, meta = pyreadstat.read_sav(
-                self.file_path,
-                metadataonly=False,
-                apply_value_formats=True
-            )
+            # Try different encodings
+            encodings = ['latin1', 'cp1252', 'iso-8859-1', 'utf-8']
+            last_error = None
             
-            if df is None or meta is None:
-                raise ValueError("Failed to read SPSS file: No data or metadata returned")
-                
-            logger.info(f"Successfully read SPSS file. Shape: {df.shape}")
+            for encoding in encodings:
+                try:
+                    # Read the SPSS file with current encoding
+                    df, meta = pyreadstat.read_sav(
+                        self.file_path,
+                        metadataonly=False,
+                        apply_value_formats=True,
+                        encoding=encoding
+                    )
+                    
+                    if df is None or meta is None:
+                        raise ValueError("Failed to read SPSS file: No data or metadata returned")
+                    
+                    logger.info(f"Successfully read SPSS file with {encoding} encoding. Shape: {df.shape}")
+                    
+                    self.data = df
+                    self.metadata = meta
+                    
+                    # Extract variable metadata
+                    self.variable_metadata = self._extract_variable_metadata(meta)
+                    
+                    return self.variable_metadata, df
+                    
+                except Exception as e:
+                    last_error = e
+                    logger.warning(f"Failed to read SPSS file with {encoding} encoding: {str(e)}")
             
-            self.data = df
-            self.metadata = meta
-            
-            # Extract variable metadata
-            self.variable_metadata = self._extract_variable_metadata(meta)
-            
-            return self.variable_metadata, df
+            # If we get here, all encodings failed
+            error_msg = f"Failed to read SPSS file with any encoding. Last error: {str(last_error)}"
+            logger.error(error_msg)
+            raise Exception(error_msg)
             
         except pyreadstat.ReadstatError as e:
             logger.error(f"Pyreadstat error: {str(e)}")
@@ -86,7 +102,8 @@ class SPSSProcessor:
             
             # Get variable names and labels
             for var_name in meta.column_names:
-                var_label = meta.column_labels[meta.column_names.index(var_name)]
+                # Get label from column_names_to_labels dictionary
+                var_label = meta.column_names_to_labels.get(var_name, "")
                 var_type = meta.readstat_variable_types[var_name]
                 
                 # Get value labels if they exist
@@ -100,6 +117,7 @@ class SPSSProcessor:
                     missing_values = meta.missing_ranges[var_name]
                 
                 variable_metadata[var_name] = {
+                    "name": var_name,
                     "label": var_label,
                     "type": self._get_variable_type(var_type),
                     "value_labels": value_labels,

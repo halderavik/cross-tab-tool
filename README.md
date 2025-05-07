@@ -55,6 +55,12 @@ A modern web application for analyzing and processing survey data from SPSS (.sa
 - PostgreSQL
 - pyreadstat (for SPSS file processing)
 - pandas
+- scipy (for statistical tests)
+- numpy
+- pytest (for testing)
+- black (for code formatting)
+- pytest-asyncio (for async testing)
+- httpx (for async HTTP client)
 
 ## Prerequisites
 
@@ -142,9 +148,10 @@ A modern web application for analyzing and processing survey data from SPSS (.sa
 - Maintain consistent naming conventions
 - Use React Context for state management
 - Implement proper type definitions for all components
+- Use black for Python code formatting
 
 ### Testing
-- Backend: pytest
+- Backend: pytest with pytest-asyncio for async tests
 - Frontend: Jest
 - Type checking with TypeScript
 
