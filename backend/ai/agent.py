@@ -82,314 +82,309 @@ class CrossTabAgent:
             logger.error(f"DeepSeek API unexpected error: {e}")
             raise
     
-    def analyze_crosstab(self, context: AnalysisContext, user_query: str) -> Dict[str, Any]:
+    def analyze_crosstab(self, context: AnalysisContext, query: str) -> Dict[str, Any]:
         """
-        Analyze cross-tabulation based on user query and context.
+        Analyze data using the AI agent.
         
         Args:
-            context: Current analysis context including dataset and metadata
-            user_query: User's natural language query
+            context: Analysis context containing dataset and metadata
+            query: User's query
             
         Returns:
-            Dictionary with analysis results and explanation
+            Dictionary containing analysis results
+        """
+        try:
+            # Get analysis plan from LLM
+            analysis_plan = self._get_analysis_plan(query, context)
+            logger.info(f"Analysis plan: {analysis_plan}")
+            
+            # Perform analysis based on plan
+            results = {}
+            
+            if analysis_plan["type"] == "distribution":
+                # Calculate distribution for binary/categorical variables
+                var = analysis_plan["variables"][0]
+                if var in context.dataset.columns:
+                    value_counts = context.dataset[var].value_counts()
+                    total = value_counts.sum()
+                    
+                    # Calculate percentages
+                    percentages = (value_counts / total * 100).round(2)
+                    
+                    results["distribution"] = {
+                        "counts": value_counts.to_dict(),
+                        "percentages": percentages.to_dict(),
+                        "total": int(total)
+                    }
+                    
+                    # Add chi-square test for binary variables
+                    if len(value_counts) == 2:
+                        expected = total / 2
+                        chi2 = ((value_counts - expected) ** 2 / expected).sum()
+                        p_value = 1 - stats.chi2.cdf(chi2, 1)
+                        results["statistics"] = {
+                            "chi_square": {
+                                "statistic": float(chi2),
+                                "p_value": float(p_value),
+                                "degrees_of_freedom": 1,
+                                "significant": p_value < 0.05,
+                                "significance": "significant" if p_value < 0.05 else "not significant"
+                            }
+                        }
+            
+            elif analysis_plan["type"] == "descriptive":
+                # Perform descriptive statistics
+                for var in analysis_plan["variables"]:
+                    if var in context.dataset.columns:
+                        stats = context.dataset[var].describe()
+                        results["descriptive_stats"] = {
+                            "count": float(stats["count"]),
+                            "mean": float(stats["mean"]),
+                            "std": float(stats["std"]),
+                            "min": float(stats["min"]),
+                            "25%": float(stats["25%"]),
+                            "50%": float(stats["50%"]),
+                            "75%": float(stats["75%"]),
+                            "max": float(stats["max"])
+                        }
+            
+            elif analysis_plan["type"] == "crosstab":
+                # Perform cross-tabulation
+                row_vars = analysis_plan.get("row_vars", [])
+                col_vars = analysis_plan.get("col_vars", [])
+                
+                if row_vars and col_vars:
+                    table = pd.crosstab(
+                        [context.dataset[var] for var in row_vars],
+                        [context.dataset[var] for var in col_vars],
+                        margins=True
+                    )
+                    
+                    results["table"] = {
+                        "data": table.to_dict(),
+                        "original_index": table.index.tolist(),
+                        "original_columns": table.columns.tolist()
+                    }
+                    
+                    # Perform statistical tests if requested
+                    if analysis_plan.get("statistical_tests"):
+                        stats_results = {}
+                        for test in analysis_plan["statistical_tests"]:
+                            if test == "chi-square":
+                                chi2, p, dof, expected = stats.chi2_contingency(table.iloc[:-1, :-1])
+                                stats_results["chi_square"] = {
+                                    "statistic": float(chi2),
+                                    "p_value": float(p),
+                                    "degrees_of_freedom": int(dof),
+                                    "significant": p < 0.05,
+                                    "significance": "significant" if p < 0.05 else "not significant"
+                                }
+                        results["statistics"] = stats_results
+            
+            # Generate explanation
+            explanation = self._generate_explanation(analysis_plan, results)
+            
+            # Return formatted response
+            return {
+                "type": analysis_plan["type"],
+                "variables": analysis_plan["variables"],
+                "descriptive_stats": results.get("descriptive_stats", {}),
+                "distribution": results.get("distribution"),
+                "table": results.get("table"),
+                "statistics": results.get("statistics", {}),
+                "explanation": explanation,
+                "visualization": analysis_plan.get("visualization"),
+                "questions_used": [query]
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in analyze_crosstab: {str(e)}")
+            raise Exception(f"Error in analysis: {str(e)}")
+    
+    def _get_analysis_plan(self, query: str, context: AnalysisContext) -> Dict[str, Any]:
+        """
+        Get an analysis plan from the LLM based on the user's query and context.
+        
+        Args:
+            query: User's query
+            context: Analysis context containing dataset and metadata
+            
+        Returns:
+            Dictionary containing the analysis plan
         """
         try:
             # Prepare context for the LLM
-            context_prompt = self._prepare_context_prompt(context, user_query)
-            logger.info(f"Prompt sent to LLM: {context_prompt}")
+            variables = list(context.dataset.columns)
             
-            # Track questions used
-            if not hasattr(context, 'analysis_history') or context.analysis_history is None:
-                context.analysis_history = []
-            context.analysis_history.append({"question": user_query})
+            # Detect variable types
+            variable_types = {}
+            for var in variables:
+                series = context.dataset[var]
+                unique_vals = series.nunique()
+                if unique_vals <= 2:  # Binary variable
+                    variable_types[var] = "binary"
+                elif unique_vals <= 10:  # Categorical variable with few categories
+                    variable_types[var] = "categorical"
+                else:
+                    variable_types[var] = "numeric"
+            
+            # Add variable type information to the prompt
+            variable_info = "\n".join([f"- {var} ({vtype})" for var, vtype in variable_types.items()])
+            
+            multiple_response_info = ""
+            if context.multiple_response_vars:
+                multiple_response_info = "\nMultiple-response variables:\n" + "\n".join(
+                    f"- {var}: {', '.join(options)}" 
+                    for var, options in context.multiple_response_vars.items()
+                )
+            
+            prompt = f"""
+            You are an AI assistant specialized in data analysis. Your task is to analyze the relationship between variables in the dataset.
+
+            Available variables and their types:
+            {variable_info}
+            {multiple_response_info}
+
+            User query: {query}
+
+            Based on the user's query and variable types, determine:
+            1. Which variables to analyze
+            2. What type of analysis to perform:
+               - For binary/categorical variables: use "distribution" type
+               - For numeric variables: use "descriptive" type
+               - For relationships between variables: use "crosstab" type
+            3. What statistical tests to run
+            4. What visualization would be most appropriate
+
+            Respond in the following JSON format:
+            {{
+                "type": "distribution" or "descriptive" or "crosstab",
+                "variables": ["var1", "var2"],
+                "row_vars": ["var1"],  # For crosstab only
+                "col_vars": ["var2"],  # For crosstab only
+                "statistical_tests": ["chi-square"],
+                "visualization": "bar_chart" or "histogram" or "pie_chart"
+            }}
+            """
             
             # Get LLM response
-            llm_response = self._call_deepseek(context_prompt)
+            llm_response = self._call_deepseek(prompt)
             logger.info(f"Raw LLM response: {llm_response}")
             
             # Parse and validate the response
-            analysis_plan = self._parse_llm_response(llm_response)
-            logger.info(f"Parsed analysis plan: {analysis_plan}")
-            
-            # Execute the analysis
-            results = self._execute_analysis(context, analysis_plan)
-            logger.info(f"Analysis results: {results}")
-            
-            return results
+            try:
+                # Extract JSON from the response
+                json_str = llm_response.strip()
+                if json_str.startswith("```json"):
+                    json_str = json_str[7:-3].strip()
+                elif json_str.startswith("```"):
+                    json_str = json_str[3:-3].strip()
+                plan = json.loads(json_str)
+                
+                # Validate required fields
+                required_fields = ["type", "variables"]
+                missing_fields = [field for field in required_fields if field not in plan]
+                if missing_fields:
+                    logger.warning(f"LLM response missing fields: {missing_fields}. Using fallback plan.")
+                    return {
+                        "type": "distribution",
+                        "variables": [variables[0]] if variables else [],
+                        "statistical_tests": [],
+                        "visualization": "bar_chart"
+                    }
+                
+                # Ensure variables is a non-empty list
+                if not isinstance(plan["variables"], list) or not plan["variables"]:
+                    logger.warning("LLM response has empty or invalid 'variables'. Using fallback plan.")
+                    return {
+                        "type": "distribution",
+                        "variables": [variables[0]] if variables else [],
+                        "statistical_tests": [],
+                        "visualization": "bar_chart"
+                    }
+                
+                # Override type to "distribution" for binary/categorical variables
+                if len(plan["variables"]) == 1:
+                    var = plan["variables"][0]
+                    if var in variable_types and variable_types[var] in ["binary", "categorical"]:
+                        plan["type"] = "distribution"
+                        plan["visualization"] = "bar_chart"
+                
+                # Add row_vars and col_vars for crosstab analysis
+                if plan["type"] == "crosstab" and len(plan["variables"]) >= 2:
+                    plan["row_vars"] = [plan["variables"][0]]
+                    plan["col_vars"] = [plan["variables"][1]]
+                
+                return plan
+                
+            except Exception as e:
+                logger.error(f"Error parsing LLM response: {e}. Raw response: {llm_response}")
+                # Return a default plan if parsing fails
+                return {
+                    "type": "distribution",
+                    "variables": [variables[0]] if variables else [],
+                    "statistical_tests": [],
+                    "visualization": "bar_chart"
+                }
+                
         except Exception as e:
-            logger.error(f"Error in analyze_crosstab: {str(e)}")
-            raise
+            logger.error(f"Error in _get_analysis_plan: {str(e)}")
+            raise Exception(f"Error getting analysis plan: {str(e)}")
     
-    def _prepare_context_prompt(self, context: AnalysisContext, user_query: str) -> str:
-        """Prepare the context prompt for the LLM."""
-        variables = list(context.dataset.columns)
-        multiple_response_info = ""
-        if context.multiple_response_vars:
-            multiple_response_info = "\nMultiple-response variables:\n" + "\n".join(
-                f"- {var}: {', '.join(options)}" 
-                for var, options in context.multiple_response_vars.items()
-            )
-        
-        prompt = f"""
-        You are an AI assistant specialized in cross-tabulation analysis. Your task is to analyze the relationship between variables in the dataset.
-
-        Available variables: {variables}
-        {multiple_response_info}
-
-        User query: {user_query}
-
-        Based on the user's query, determine:
-        1. Which variables to analyze
-        2. What type of analysis to perform (crosstab, descriptive stats)
-        3. What statistical tests to run
-        4. What visualization would be most appropriate
-
-        Respond in the following JSON format:
-        {{
-            "type": "crosstab" or "descriptive",
-            "variables": ["var1", "var2"],
-            "statistical_tests": ["chi-square"],
-            "visualization": "bar_chart"
-        }}
+    def _generate_explanation(self, analysis_plan: Dict[str, Any], results: Dict[str, Any]) -> str:
         """
-        return prompt
-    
-    def _parse_llm_response(self, response: str) -> Dict[str, Any]:
-        """Parse the LLM response into an analysis plan, robust to missing or empty fields."""
-        try:
-            # Extract JSON from the response
-            json_str = response.strip()
-            if json_str.startswith("```json"):
-                json_str = json_str[7:-3].strip()
-            elif json_str.startswith("```"):
-                json_str = json_str[3:-3].strip()
-            plan = json.loads(json_str)
-
-            # Validate required fields
-            required_fields = ["type", "variables"]
-            missing_fields = [field for field in required_fields if field not in plan]
-            if missing_fields:
-                logger.warning(f"LLM response missing fields: {missing_fields}. Using fallback plan. Raw: {response}")
-                return {
-                    "type": "crosstab",
-                    "variables": ["var1", "var2"],
-                    "statistical_tests": ["chi-square"],
-                    "visualization": "bar_chart"
-                }
-            # Ensure variables is a non-empty list
-            if not isinstance(plan["variables"], list) or not plan["variables"]:
-                logger.warning(f"LLM response has empty or invalid 'variables'. Using fallback plan. Raw: {response}")
-                return {
-                    "type": "crosstab",
-                    "variables": ["var1", "var2"],
-                    "statistical_tests": ["chi-square"],
-                    "visualization": "bar_chart"
-                }
-            return plan
-        except Exception as e:
-            logger.error(f"Error parsing LLM response: {e}. Raw response: {response}")
-            # Return a default plan if parsing fails
-            return {
-                "type": "crosstab",
-                "variables": ["var1", "var2"],
-                "statistical_tests": ["chi-square"],
-                "visualization": "bar_chart"
-            }
-    
-    def _execute_analysis(self, context: AnalysisContext, plan: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute the analysis based on the plan."""
-        try:
-            if plan["type"] == "crosstab":
-                # Handle multiple response variables
-                multiple_response = {}
-                if context.multiple_response_vars:
-                    for var, options in context.multiple_response_vars.items():
-                        if var in plan["variables"]:
-                            multiple_response[var] = {
-                                "type": "select_all",
-                                "options": options
-                            }
+        Generate a human-readable explanation of the analysis results.
+        
+        Args:
+            analysis_plan: The analysis plan
+            results: The analysis results
+            
+        Returns:
+            String containing the explanation
+        """
+        explanation = []
+        
+        if analysis_plan["type"] == "distribution":
+            dist = results.get("distribution", {})
+            if dist:
+                var = analysis_plan["variables"][0]
+                explanation.append(f"Distribution of {var}:")
+                for value, count in dist["counts"].items():
+                    pct = dist["percentages"][value]
+                    explanation.append(f"- {value}: {count} ({pct}%)")
                 
-                # Map variable names if needed
-                mapped_vars = []
-                for var in plan["variables"]:
-                    if var == "income_level":
-                        mapped_vars.append("income")
-                    else:
-                        mapped_vars.append(var)
-                
-                # Ensure we have a valid file path
-                if not context.file_path:
-                    raise ValueError("No file path provided in context")
-                
-                # Create crosstab request
-                from routers.analyze import analyze_crosstab, CrosstabRequest
-                
-                # Use only the first two variables for the crosstab
-                row_vars = [mapped_vars[0]] if mapped_vars else []
-                col_vars = [mapped_vars[1]] if len(mapped_vars) > 1 else []
-                
-                if not row_vars or not col_vars:
-                    raise ValueError("Need at least two variables for crosstab analysis")
-                
-                request = CrosstabRequest(
-                    file_path=context.file_path,
-                    row_vars=row_vars,
-                    col_vars=col_vars,
-                    statistics=plan.get("statistical_tests", ["chi-square"]),
-                    display={"row_pct": True, "col_pct": True},
-                    significance={"enable": True},
-                    multiple_response=multiple_response
-                )
-                
-                # Execute crosstab
-                result = analyze_crosstab(request)
-                logger.info(f"Received crosstab result: {result}")
-                
-                # Add statistical tests if requested
-                if "chi-square" in plan.get("statistical_tests", []):
-                    try:
-                        # Convert crosstab to numpy array for statistical tests
-                        ct_data = pd.DataFrame(result["table"]["data"]).values
-                        chi2_results = chi_square(ct_data)
-                        chi2_results = mark_significance(chi2_results)
-                        
-                        # Ensure the statistics key exists
-                        if "statistics" not in result:
-                            result["statistics"] = {}
-                        
-                        # Add chi-square results with the correct key and convert numpy types
-                        result["statistics"]["chi_square"] = {
-                            "statistic": float(chi2_results["chi2"]),
-                            "p_value": float(chi2_results["p_value"]),
-                            "degrees_of_freedom": int(chi2_results["dof"]),
-                            "significant": bool(chi2_results["significant"]),
-                            "significance": str(chi2_results.get("significance", "ns"))
-                        }
-                        
-                        logger.info(f"Added chi-square results: {result['statistics']['chi_square']}")
-                    except Exception as e:
-                        logger.error(f"Error calculating chi-square test: {str(e)}")
-                        raise
-                
-                # Add multiple response info to results
-                if multiple_response:
-                    result["multiple_response"] = multiple_response
-                
-                # Generate explanation
-                explanation = self._explain_crosstab(result)
-                
-                # Create the response dictionary with converted types
-                response_dict = {
-                    "analysis_type": str(plan["type"]),
-                    "variables": [str(v) for v in [row_vars[0], col_vars[0]]],  # Use only the variables used in the crosstab
-                    "results": self._to_native(result),
-                    "explanation": str(explanation),
-                    "visualization_suggestion": str(plan.get("visualization")) if plan.get("visualization") else None,
-                    "questions_used": [str(q["question"]) for q in context.analysis_history if "question" in q],
-                    "columns_used": [str(v) for v in [row_vars[0], col_vars[0]]]  # Use only the variables used in the crosstab
-                }
-                
-                logger.info(f"Created response dictionary: {response_dict}")
-                return response_dict
-            elif plan["type"] == "descriptive":
-                return self._execute_descriptive(context, plan)
-            else:
-                raise ValueError(f"Unsupported analysis type: {plan['type']}")
-        except Exception as e:
-            logger.error(f"Error executing analysis: {str(e)}. Plan: {plan}")
-            raise
-    
-    def _to_native(self, obj):
-        """Recursively convert numpy types to native Python types."""
-        if isinstance(obj, dict):
-            return {k: self._to_native(v) for k, v in obj.items()}
-        elif isinstance(obj, list):
-            return [self._to_native(v) for v in obj]
-        elif isinstance(obj, (np.integer, np.floating)):
-            return obj.item()
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        else:
-            return obj
-    
-    def _execute_descriptive(self, context: AnalysisContext, plan: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute descriptive statistics analysis, robust to non-numeric columns."""
-        var = plan["variables"][0]
-        series = context.dataset[var]
-        if pd.api.types.is_numeric_dtype(series):
-            stats = series.describe()
-            return {"descriptive_stats": self._to_native(stats.to_dict())}
-        else:
-            # For non-numeric columns, return count, unique, top, freq
-            logger.warning(f"Descriptive stats requested for non-numeric column '{var}'. Returning count, unique, top, freq.")
-            desc = series.describe()
-            result = {k: desc[k] for k in ["count", "unique", "top", "freq"] if k in desc}
-            return {"descriptive_stats": self._to_native(result)}
-    
-    def _generate_explanation(self, results: Dict[str, Any], plan: Dict[str, Any]) -> str:
-        """Generate a natural language explanation of the results."""
-        if plan["type"] == "crosstab":
-            return self._explain_crosstab(results)
-        elif plan["type"] == "descriptive":
-            # If the descriptive stats are for a non-numeric column, do not mention visualization
+                # Add chi-square test results if available
+                stats = results.get("statistics", {})
+                if "chi_square" in stats:
+                    chi2 = stats["chi_square"]
+                    explanation.append(f"\nChi-square test results:")
+                    explanation.append(f"- Statistic: {chi2['statistic']:.2f}")
+                    explanation.append(f"- p-value: {chi2['p_value']:.4f}")
+                    explanation.append(f"- Result: {chi2['significance']}")
+        
+        elif analysis_plan["type"] == "descriptive":
             stats = results.get("descriptive_stats", {})
-            if all(k in stats for k in ["count", "unique", "top", "freq"]) and len(stats) == 4:
-                return (
-                    f"I've analyzed the descriptive statistics for the variable. Here's what I found:\n\n"
-                    f"- Count: {stats['count']}\n"
-                    f"- Unique: {stats['unique']}\n"
-                    f"- Most common value: {stats['top']}\n"
-                    f"- Frequency of most common: {stats['freq']}\n"
-                )
-            else:
-                return self._explain_descriptive(results)
-        else:
-            return "Analysis completed successfully."
-    
-    def _explain_crosstab(self, results: Dict[str, Any]) -> str:
-        """Generate explanation for cross-tabulation results."""
-        try:
-            # Handle both dictionary and AgentResponse results
-            if isinstance(results, AgentResponse):
-                results_dict = results.results
-            else:
-                results_dict = results
-                
-            chi2 = results_dict.get("statistics", {}).get("chi_square", {})
-            if not chi2:
-                return "Cross-tabulation analysis completed. No statistical tests were performed."
-            
-            significance = "statistically significant" if chi2.get("p_value", 1.0) < 0.05 else "not statistically significant"
-            
-            return f"""
-            I've analyzed the relationship between the variables. Here's what I found:
-            
-            The cross-tabulation shows the distribution of values across the categories.
-            The chi-square test results indicate that the relationship is {significance}:
-            - Chi-square statistic: {chi2.get('statistic', 0):.2f}
-            - P-value: {chi2.get('p_value', 1.0):.4f}
-            - Degrees of freedom: {chi2.get('degrees_of_freedom', 0)}
-            
-            Click the "View Visualization" button to see the detailed results.
-            """
-        except Exception as e:
-            logger.error(f"Error generating crosstab explanation: {str(e)}")
-            return "Analysis completed. View the visualization for detailed results."
-    
-    def _explain_descriptive(self, results: Dict[str, Any]) -> str:
-        """Generate explanation for descriptive statistics."""
-        stats = results["descriptive_stats"]
-        return f"""
-        I've analyzed the descriptive statistics for the variable. Here's what I found:
+            if stats:
+                explanation.append(f"Descriptive statistics for {', '.join(analysis_plan['variables'])}:")
+                explanation.append(f"- Count: {stats['count']:.0f}")
+                explanation.append(f"- Mean: {stats['mean']:.2f}")
+                explanation.append(f"- Standard Deviation: {stats['std']:.2f}")
+                explanation.append(f"- Range: {stats['min']:.2f} to {stats['max']:.2f}")
         
-        - Mean: {stats['mean']:.2f}
-        - Standard Deviation: {stats['std']:.2f}
-        - Minimum: {stats['min']:.2f}
-        - Maximum: {stats['max']:.2f}
+        elif analysis_plan["type"] == "crosstab":
+            explanation.append(f"Cross-tabulation analysis:")
+            explanation.append(f"- Row variables: {', '.join(analysis_plan.get('row_vars', []))}")
+            explanation.append(f"- Column variables: {', '.join(analysis_plan.get('col_vars', []))}")
+            
+            stats = results.get("statistics", {})
+            if "chi_square" in stats:
+                chi2 = stats["chi_square"]
+                explanation.append(f"\nChi-square test results:")
+                explanation.append(f"- Statistic: {chi2['statistic']:.2f}")
+                explanation.append(f"- p-value: {chi2['p_value']:.4f}")
+                explanation.append(f"- Result: {chi2['significance']}")
         
-        Click the "View Visualization" button to see the detailed distribution.
-        """
+        return "\n".join(explanation)
 
     async def _execute_crosstab(self, analysis_plan: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a crosstab analysis based on the analysis plan."""

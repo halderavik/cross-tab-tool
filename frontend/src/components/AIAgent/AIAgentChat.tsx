@@ -3,10 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useData } from '@/contexts/data-context';
 import { CrossTabResult, AgentResponse } from '@/types/analysis';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface Message {
   id: number;
@@ -28,6 +30,190 @@ const chartTypes = [
   { label: 'Line Chart', value: 'line' },
   { label: 'Pie Chart', value: 'pie' },
 ];
+
+const CommunicationGuide: React.FC = () => {
+  return (
+    <div className="space-y-6 p-4">
+      <h2 className="text-2xl font-bold">How to Use the AI Assistant</h2>
+      
+      <Tabs defaultValue="examples" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="examples">Examples</TabsTrigger>
+          <TabsTrigger value="features">Features</TabsTrigger>
+          <TabsTrigger value="best-practices">Best Practices</TabsTrigger>
+          <TabsTrigger value="code">Code Examples</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="examples" className="space-y-4">
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="multiple-response">
+              <AccordionTrigger>Multiple-Response Analysis</AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-2">
+                  <p className="font-medium">Example Prompts:</p>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>"Show me the distribution of all selected responses for the 'Which social media platforms do you use?' question"</li>
+                    <li>"Create a crosstab of all selected brands against age groups"</li>
+                    <li>"What percentage of respondents selected each combination of features?"</li>
+                  </ul>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="custom-variables">
+              <AccordionTrigger>Custom Variables & Recodes</AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-2">
+                  <p className="font-medium">Example Prompts:</p>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>"Combine the 'Very Satisfied' and 'Satisfied' responses into a single 'Positive' category"</li>
+                    <li>"Create a new variable that groups ages into 'Young', 'Middle', and 'Senior'"</li>
+                    <li>"Recode the income brackets into three categories: Low, Medium, High"</li>
+                  </ul>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="statistical-tests">
+              <AccordionTrigger>Advanced Statistical Tests</AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-2">
+                  <p className="font-medium">Example Prompts:</p>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>"Compare the satisfaction scores between regions using t-tests"</li>
+                    <li>"Show me if there are significant differences in brand preference by age group"</li>
+                    <li>"Calculate the median income for each education level"</li>
+                  </ul>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </TabsContent>
+
+        <TabsContent value="features" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="p-4">
+              <h3 className="font-semibold mb-2">Multiple-Response Analysis</h3>
+              <p className="text-sm text-gray-600">Analyze multiple selected responses and their combinations</p>
+            </Card>
+            <Card className="p-4">
+              <h3 className="font-semibold mb-2">Custom Variables</h3>
+              <p className="text-sm text-gray-600">Create new variables by combining or recoding existing ones</p>
+            </Card>
+            <Card className="p-4">
+              <h3 className="font-semibold mb-2">Statistical Testing</h3>
+              <p className="text-sm text-gray-600">Perform appropriate tests based on variable types</p>
+            </Card>
+            <Card className="p-4">
+              <h3 className="font-semibold mb-2">Report Generation</h3>
+              <p className="text-sm text-gray-600">Generate formatted reports with tables and charts</p>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="best-practices" className="space-y-4">
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-semibold mb-2">Be Specific</h3>
+              <ul className="list-disc pl-4 space-y-1 text-sm">
+                <li>Clearly state what you want to analyze</li>
+                <li>Specify the variables of interest</li>
+                <li>Define any conditions or filters</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2">Use Natural Language</h3>
+              <ul className="list-disc pl-4 space-y-1 text-sm">
+                <li>Ask questions as you would to a human analyst</li>
+                <li>Provide context when needed</li>
+                <li>Don't hesitate to ask for clarification</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2">Request Verification</h3>
+              <ul className="list-disc pl-4 space-y-1 text-sm">
+                <li>Ask the agent to confirm its understanding</li>
+                <li>Request explanation of the methodology</li>
+                <li>Ask for alternative approaches</li>
+              </ul>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="code" className="space-y-4">
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="multiple-response-code">
+              <AccordionTrigger>Multiple-Response Example</AccordionTrigger>
+              <AccordionContent>
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
+                  <code>{`const request = {
+  file_id: 123,
+  query: "Show distribution of social media platforms by age group",
+  context: {
+    multiple_response_vars: ["social_media_platforms"],
+    row_vars: ["age_group"],
+    col_vars: ["social_media_platforms"]
+  }
+};`}</code>
+                </pre>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="custom-variables-code">
+              <AccordionTrigger>Custom Variables Example</AccordionTrigger>
+              <AccordionContent>
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
+                  <code>{`const request = {
+  file_id: 123,
+  query: "Recode satisfaction into positive/negative",
+  context: {
+    custom_variables: [{
+      name: "satisfaction_recoded",
+      conditions: [
+        {
+          column: "satisfaction",
+          comparison: "equals",
+          value: "Very Satisfied",
+          operator: "OR"
+        },
+        {
+          column: "satisfaction",
+          comparison: "equals",
+          value: "Satisfied"
+        }
+      ],
+      new_value: "Positive"
+    }]
+  }
+};`}</code>
+                </pre>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="statistical-tests-code">
+              <AccordionTrigger>Statistical Tests Example</AccordionTrigger>
+              <AccordionContent>
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
+                  <code>{`const request = {
+  file_id: 123,
+  query: "Compare satisfaction by region",
+  context: {
+    statistical_tests: {
+      type: "anova",
+      variables: ["satisfaction", "region"],
+      significance_level: 0.05
+    }
+  }
+};`}</code>
+                </pre>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
 
 export const AIAgentChat: React.FC = () => {
   const { dataFile } = useData();
@@ -161,38 +347,106 @@ export const AIAgentChat: React.FC = () => {
   };
 
   const renderVisualization = (analysis: AgentResponse) => {
-    if (analysis.analysis_type === 'crosstab' && analysis.results?.crosstab) {
-      const firstRow = Object.keys(analysis.results.crosstab)[0];
-      if (!firstRow) return null;
-      
-      const columns = Object.keys(analysis.results.crosstab[firstRow]);
+    console.log('Rendering visualization with data:', analysis);
+    
+    if (analysis.analysis_type === 'distribution' && analysis.results?.distribution) {
+        const { counts, percentages } = analysis.results.distribution;
+        const data = Object.entries(counts).map(([value, count]) => ({
+            value: value.toString(),
+            count: count as number,
+            percentage: percentages[value] as number
+        }));
+        
+        return (
+            <div className="space-y-4">
+                <div className="bg-white p-4 rounded-lg shadow">
+                    <h3 className="text-lg font-semibold mb-4">Distribution</h3>
+                    <div className="space-y-2">
+                        {data.map(({ value, count, percentage }) => (
+                            <div key={value} className="flex items-center justify-between">
+                                <span className="font-medium">{value}</span>
+                                <span>{count} ({percentage}%)</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg shadow">
+                    <h3 className="text-lg font-semibold mb-4">Bar Chart</h3>
+                    <div style={{ width: '100%', height: '300px' }}>
+                        <ResponsiveContainer>
+                            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="value" />
+                                <YAxis />
+                                <Tooltip
+                                    formatter={(value: number) => [`${value}`, 'Count']}
+                                    labelFormatter={(label) => `Value: ${label}`}
+                                />
+                                <Legend />
+                                <Bar dataKey="count" name="Count" fill="#3b82f6" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+                
+                {analysis.results.statistics?.chi_square && (
+                    <div className="bg-white p-4 rounded-lg shadow">
+                        <h3 className="text-lg font-semibold mb-4">Chi-Square Test Results</h3>
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <span>Statistic:</span>
+                                <span>{analysis.results.statistics.chi_square.statistic.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>p-value:</span>
+                                <span>{analysis.results.statistics.chi_square.p_value.toFixed(4)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Result:</span>
+                                <span className={analysis.results.statistics.chi_square.significant ? 'text-green-600' : 'text-red-600'}>
+                                    {analysis.results.statistics.chi_square.significance}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+    
+    if (analysis.analysis_type === 'crosstab' && analysis.results?.table) {
+      const { data, variable_types } = analysis.results.table;
+      const rowLabels = Object.keys(data);
+      const columnLabels = Object.keys(data[rowLabels[0]]);
       
       return (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Cross-Tabulation Results</h3>
+          <div className="bg-muted p-4 rounded-lg">
+            <h3 className="font-semibold mb-2">Variable Types</h3>
+            <p>Row Variable: {variable_types?.row || 'unknown'}</p>
+            <p>Column Variable: {variable_types?.column || 'unknown'}</p>
+          </div>
+          
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="w-full border-collapse">
+              <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {analysis.variables[0]}
-                  </th>
-                  {columns.map((col) => (
-                    <th key={col} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="border p-2 bg-muted"></th>
+                  {columnLabels.map((col) => (
+                    <th key={col} className="border p-2 bg-muted">
                       {col}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {Object.entries(analysis.results.crosstab).map(([row, cols]) => (
+              <tbody>
+                {rowLabels.map((row) => (
                   <tr key={row}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {row}
-                    </td>
-                    {Object.values(cols).map((value, i) => (
-                      <td key={i} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : value}
+                    <td className="border p-2 font-medium bg-muted">{row}</td>
+                    {columnLabels.map((col) => (
+                      <td key={col} className="border p-2 text-right">
+                        {data[row][col]}
                       </td>
                     ))}
                   </tr>
@@ -200,96 +454,76 @@ export const AIAgentChat: React.FC = () => {
               </tbody>
             </table>
           </div>
-          {analysis.results.chi_square && (
-            <div className="mt-4">
-              <h4 className="text-md font-semibold">Chi-Square Test Results</h4>
-              <div className="grid grid-cols-2 gap-4 mt-2">
-                <div>
-                  <p className="text-sm text-gray-600">Statistic</p>
-                  <p className="text-lg font-semibold">{typeof analysis.results.chi_square.statistic === 'number' ? analysis.results.chi_square.statistic.toLocaleString(undefined, { maximumFractionDigits: 2 }) : analysis.results.chi_square.statistic}</p>
+
+          {analysis.results.statistics && (
+            <div className="space-y-4">
+              <h3 className="font-semibold">Statistical Analysis</h3>
+              
+              {/* Chi-Square Test Results */}
+              {analysis.results.statistics.chi_square && (
+                <div className="bg-muted p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Chi-Square Test</h4>
+                  <p>Statistic: {analysis.results.statistics.chi_square.statistic.toFixed(3)}</p>
+                  <p>p-value: {analysis.results.statistics.chi_square.p_value.toFixed(3)}</p>
+                  <p>Degrees of Freedom: {analysis.results.statistics.chi_square.degrees_of_freedom}</p>
+                  <p className="font-medium">
+                    Result: {analysis.results.statistics.chi_square.significance}
+                  </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">P-value</p>
-                  <p className="text-lg font-semibold">{typeof analysis.results.chi_square.p_value === 'number' ? analysis.results.chi_square.p_value.toLocaleString(undefined, { maximumFractionDigits: 4 }) : analysis.results.chi_square.p_value}</p>
+              )}
+
+              {/* Cramer's V Results */}
+              {analysis.results.statistics.cramer_v && (
+                <div className="bg-muted p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Cramer's V</h4>
+                  <p>Value: {analysis.results.statistics.cramer_v.value.toFixed(3)}</p>
+                  <p>Interpretation: {analysis.results.statistics.cramer_v.interpretation} association</p>
                 </div>
-              </div>
+              )}
+
+              {/* ANOVA Results */}
+              {analysis.results.statistics.anova && (
+                <div className="bg-muted p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">ANOVA Test</h4>
+                  <p>F-statistic: {analysis.results.statistics.anova.statistic.toFixed(3)}</p>
+                  <p>p-value: {analysis.results.statistics.anova.p_value.toFixed(3)}</p>
+                  <p className="font-medium">
+                    Result: {analysis.results.statistics.anova.significance}
+                  </p>
+                </div>
+              )}
+
+              {/* Correlation Results */}
+              {analysis.results.statistics.correlation && (
+                <div className="bg-muted p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Correlation Analysis</h4>
+                  <p>Coefficient: {analysis.results.statistics.correlation.coefficient.toFixed(3)}</p>
+                  <p>p-value: {analysis.results.statistics.correlation.p_value.toFixed(3)}</p>
+                  <p>Interpretation: {analysis.results.statistics.correlation.interpretation} correlation</p>
+                  <p className="font-medium">
+                    Result: {analysis.results.statistics.correlation.significance}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
       );
     } else if (analysis.analysis_type === 'descriptive' && analysis.results?.descriptive_stats) {
-      const stats = analysis.results.descriptive_stats as Record<string, unknown>;
-      const statKeys = Object.keys(stats);
-      // Prepare data for chart (if numeric)
-      const numericKeys = statKeys.filter(k => typeof stats[k] === 'number' && !isNaN(stats[k] as number));
-      const chartData = numericKeys.map(k => ({ name: k, value: stats[k] as number }));
+      const stats = analysis.results.descriptive_stats;
       return (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Descriptive Statistics</h3>
           <div className="grid grid-cols-2 gap-4">
-            {statKeys.map((stat) => {
-              const value = stats[stat];
-              return (
-                <div key={stat} className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600 capitalize">{stat.replace('_', ' ')}</p>
-                  <p className="text-lg font-semibold">
-                    {value !== undefined && value !== null && value !== '' ?
-                      (typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : String(value))
-                      : 'N/A'}
-                  </p>
-                </div>
-              );
-            })}
+            {Object.entries(stats).map(([key, value]) => (
+              <div key={key} className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600 capitalize">{key.replace('_', ' ')}</p>
+                <p className="text-lg font-semibold">
+                  {typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : String(value)}
+                </p>
+              </div>
+            ))}
           </div>
-          {/* Chart type selector and chart rendering */}
-          {numericKeys.length > 0 && (
-            <div className="mt-6">
-              <div className="mb-2 flex items-center gap-2">
-                <span className="text-sm font-medium">Chart type:</span>
-                {chartTypes.map((ct) => (
-                  <button
-                    key={ct.value}
-                    className={`px-3 py-1 rounded border ${selectedChartType === ct.value ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
-                    onClick={() => setSelectedChartType(ct.value as 'bar' | 'line' | 'pie')}
-                  >
-                    {ct.label}
-                  </button>
-                ))}
-              </div>
-              <div className="bg-white p-4 rounded shadow">
-                {selectedChartType === 'bar' && (
-                  <BarChart width={400} height={250} data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="value" fill="#8884d8" />
-                  </BarChart>
-                )}
-                {selectedChartType === 'line' && (
-                  <LineChart width={400} height={250} data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="value" stroke="#8884d8" />
-                  </LineChart>
-                )}
-                {selectedChartType === 'pie' && (
-                  <PieChart width={400} height={250}>
-                    <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#8dd1e1'][index % 5]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       );
     }
@@ -299,6 +533,8 @@ export const AIAgentChat: React.FC = () => {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <CommunicationGuide />
+        
         {messages.map((message) => (
           <div
             key={message.id}
@@ -340,19 +576,21 @@ export const AIAgentChat: React.FC = () => {
       </div>
 
       <Dialog open={!!selectedVisualization} onOpenChange={() => setSelectedVisualization(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" aria-describedby="ai-agent-dialog-desc">
-          <VisuallyHidden>
-            <div id="ai-agent-dialog-desc">This dialog shows the results of your AI-powered data analysis, including tables and statistics.</div>
-          </VisuallyHidden>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Analysis Results</DialogTitle>
+            <DialogDescription>
+              This dialog shows the results of your AI-powered data analysis, including tables and statistics.
+            </DialogDescription>
           </DialogHeader>
           {selectedVisualization?.columns_used && (
             <div className="mb-4 text-sm text-gray-700">
               <strong>Columns used for this analysis:</strong> {selectedVisualization.columns_used.join(', ')}
             </div>
           )}
-          {selectedVisualization && renderVisualization(selectedVisualization)}
+          <div className="mt-4">
+            {selectedVisualization && renderVisualization(selectedVisualization)}
+          </div>
         </DialogContent>
       </Dialog>
 

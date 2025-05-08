@@ -82,8 +82,23 @@ async def analyze_with_agent(
             response_dict = agent.analyze_crosstab(context, query.query)
             logger.info(f"Successfully generated analysis response: {response_dict}")
             
+            # Format the response according to AgentResponse interface
+            formatted_response = {
+                "analysis_type": response_dict.get("type", "descriptive"),
+                "variables": response_dict.get("variables", []),
+                "results": {
+                    "descriptive_stats": response_dict.get("descriptive_stats", {}),
+                    "table": response_dict.get("table"),
+                    "statistics": response_dict.get("statistics", {})
+                },
+                "explanation": response_dict.get("explanation", "Analysis completed successfully."),
+                "visualization_suggestion": response_dict.get("visualization"),
+                "questions_used": response_dict.get("questions_used", []),
+                "columns_used": response_dict.get("variables", [])
+            }
+            
             # Convert dictionary to AgentResponse
-            response = AgentResponse(**response_dict)
+            response = AgentResponse(**formatted_response)
             logger.info(f"Converted to AgentResponse: {response}")
             
             return response
