@@ -1,4 +1,4 @@
-# SPSS Cross-Tab Tool
+# SPSS Cross-Tab Tool Frontend
 
 An AI-powered platform for analyzing SPSS files and performing advanced cross-tabulations.
 
@@ -15,6 +15,10 @@ An AI-powered platform for analyzing SPSS files and performing advanced cross-ta
 - State Management: React Context for application-wide state
 - Type Safety: Full TypeScript implementation
 - **Custom Variable Builder**: Create new variables by combining values from any columns, with dropdowns showing all possible values for each condition. **Custom variables are now managed and created only from the Variables section/tab of the workspace.**
+- Accessibility: Fully accessible UI components with proper ARIA labels and descriptions
+- Real-time Analysis: Interactive data analysis with immediate feedback
+- Error Handling: Comprehensive error handling for all operations
+- Responsive Design: Works seamlessly on desktop and mobile devices
 
 ## Tech Stack
 
@@ -48,93 +52,81 @@ An AI-powered platform for analyzing SPSS files and performing advanced cross-ta
 - Floating UI (@floating-ui/react-dom)
 - Axios
 
-### Backend
-- Python FastAPI
-- PostgreSQL
-- SQLAlchemy ORM
-- PyReadStat for SPSS file processing
-- pandas
-- scipy (for statistical tests)
-- numpy
-- pytest (for testing)
-- black (for code formatting)
-- pytest-asyncio (for async testing)
-- httpx (for async HTTP client)
-
 ## Prerequisites
 
-- Python 3.11+
 - Node.js 18+
-- PostgreSQL
 - npm or yarn
 
 ## Getting Started
-
-### Backend Setup
-
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   # On Windows:
-   .\venv\Scripts\activate
-   # On Linux/Mac:
-   source venv/bin/activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Set up environment variables:
-   Create a `.env` file in the backend directory with:
-   ```
-   DATABASE_URL=postgresql://user:password@localhost:5432/cross_tab_db
-   ```
-5. Initialize the database:
-   ```bash
-   python init_db.py
-   ```
-6. Start the backend server:
-   ```bash
-   # Recommended (hot reload):
-   uvicorn main:app --reload --host 0.0.0.0 --port 8000
-   # Or (production):
-   uvicorn main:app --host 0.0.0.0 --port 8000
-   ```
-
-### Frontend Setup
 
 1. Navigate to the frontend directory:
    ```bash
    cd frontend
    ```
+
 2. Install dependencies:
    ```bash
    npm install
    ```
+
 3. Start the development server:
    ```bash
    npm run dev
    ```
+
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Development
 
 ### Code Style
-- Follow PEP 8 for Python code
-- Use TypeScript for frontend development
+- Use TypeScript for all components
+- Follow React best practices
 - Maintain consistent naming conventions
 - Implement proper type definitions
 - Use React Context for state management
-- Use black for Python code formatting
+- Follow accessibility guidelines (WCAG 2.1)
 
 ### Testing
-- Backend: pytest with pytest-asyncio for async tests
-- Frontend: Jest
+- Jest for unit testing
+- React Testing Library for component testing
 - Type checking with TypeScript
+
+### Component Structure
+- Components are organized by feature
+- Each component has its own directory with:
+  - Component file
+  - Test file
+  - Types file (if needed)
+  - Styles file (if needed)
+
+### State Management
+- React Context for global state
+- Local state for component-specific data
+- Custom hooks for reusable logic
+
+### Error Handling
+- Comprehensive error boundaries
+- User-friendly error messages
+- Network error handling
+- Form validation
+- Data processing error handling
+
+### Accessibility
+- ARIA labels and descriptions
+- Keyboard navigation
+- Screen reader support
+- Color contrast compliance
+- Focus management
+
+## API Integration
+
+The frontend communicates with the backend through the following endpoints:
+
+- `POST /api/upload`: File upload endpoint
+- `GET /api/test-connection`: Connection test endpoint
+- `GET /api/csv-full/{filename}`: Full CSV data retrieval
+- `GET /api/spss-full/{filename}`: Full SPSS data retrieval
+- `POST /api/ai/analyze`: AI analysis endpoint
 
 ## License
 

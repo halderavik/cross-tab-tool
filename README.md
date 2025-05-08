@@ -15,6 +15,10 @@ A modern web application for analyzing and processing survey data from SPSS (.sa
 - **AI Assistant**: Get help with your analysis from our AI agent, including visualizations and dynamic statistics
 - **Visualizations**: Generate charts and graphs from your analysis, with support for bar, line, and pie charts in the AI agent chat popup
 - **Custom Variable Builder**: Create new variables by combining values from any columns, with dropdowns showing all possible values for each condition. **Custom variables are now managed and created only from the Variables section/tab of the workspace.**
+- **Accessibility**: Fully accessible UI components with proper ARIA labels and descriptions
+- **Real-time Analysis**: Interactive data analysis with immediate feedback
+- **Error Handling**: Comprehensive error handling for all operations
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
 
 ## Tech Stack
 
@@ -137,8 +141,10 @@ A modern web application for analyzing and processing survey data from SPSS (.sa
 - `GET /api/csv-full/{filename}`: Returns all rows and columns for a given CSV file.
 - `GET /api/spss-full/{filename}`: Returns all rows and columns for a given SPSS (.sav) file.
 
-### Data Viewer Improvements
-- The Data Viewer now includes a 'Load Full Data' button in the Data tab. Clicking this button fetches and displays the entire dataset (all rows) for both CSV and SPSS files, using the new backend endpoints.
+### AI Analysis
+- `POST /api/ai/analyze`
+  - Accepts: Query and file_id
+  - Returns: Analysis results with visualizations
 
 ## Development
 
@@ -163,6 +169,8 @@ The application includes comprehensive error handling for:
 - API connectivity
 - CORS issues
 - Special value processing (NaN, infinity)
+- Network timeouts
+- Invalid data formats
 
 ## Contributing
 
